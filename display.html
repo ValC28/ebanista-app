@@ -53,7 +53,7 @@
 
     /* ── Board ── */
     .board {
-      display: grid; grid-template-columns: repeat(4, 1fr);
+      display: grid; grid-template-columns: repeat(5, 1fr);
       height: calc(100vh - 72px - 3px);
     }
     .column {
@@ -71,7 +71,8 @@
     .col-0 .col-header { border-color: var(--gray); }
     .col-1 .col-header { border-color: var(--orange); }
     .col-2 .col-header { border-color: var(--blue); }
-    .col-3 .col-header { border-color: var(--green); }
+    .col-3 .col-header { border-color: var(--accent); }
+    .col-4 .col-header { border-color: var(--green); }
 
     .col-title {
       font-size: 12px; font-weight: 700; text-transform: uppercase;
@@ -80,7 +81,8 @@
     .col-0 .col-title { color: var(--gray); }
     .col-1 .col-title { color: var(--orange); }
     .col-2 .col-title { color: var(--blue); }
-    .col-3 .col-title { color: var(--green); }
+    .col-3 .col-title { color: var(--accent); }
+    .col-4 .col-title { color: var(--green); }
 
     .col-count {
       width: 28px; height: 28px; border-radius: 50%;
@@ -90,7 +92,8 @@
     .col-0 .col-count { background: rgba(142,142,147,.15); color: var(--gray); }
     .col-1 .col-count { background: rgba(255,149,0,.12); color: var(--orange); }
     .col-2 .col-count { background: rgba(0,122,255,.12); color: var(--blue); }
-    .col-3 .col-count { background: rgba(52,199,89,.12); color: var(--green); }
+    .col-3 .col-count { background: rgba(197,151,42,.15); color: var(--accent); }
+    .col-4 .col-count { background: rgba(52,199,89,.12); color: var(--green); }
 
     .col-body {
       flex: 1; overflow-y: auto; padding: 12px 10px;
@@ -191,7 +194,7 @@
 // ═══ Config ═══════════════════════════════════════════
 const REFRESH_SEC     = 60;
 const DRIVE_DATA_FILE = 'ebanista-data.json';
-const STATUS_LABELS   = ['Nouveau', 'En étude', 'En production', 'Terminé'];
+const STATUS_LABELS   = ['Nouveau', 'En étude', 'En production', 'Prêt à livrer', 'Terminé'];
 
 let _clientId    = localStorage.getItem('ebanista_gcid') || '';
 let _fileId      = localStorage.getItem('ebanista_dfid') || '';
@@ -211,6 +214,33 @@ function tick() {
     n.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
 }
 setInterval(tick, 1000); tick();
+
+// ═══ Auto-status ══════════════════════════════════════
+function launchProgress(p) {
+  if (!p.lancement) return 0;
+  const items = [
+    ...(p.lancement.dossierTech    || []),
+    ...(p.lancement.fichiersProd   || []),
+    ...(p.lancement.matieresFourn  || []),
+    ...(p.lancement.pointsCritiques|| [])
+  ];
+  return items.length ? Math.round(items.filter(Boolean).length / items.length * 100) : 0;
+}
+
+function atelierProgress(p) {
+  const items = p.atelier?.controleQualite || [];
+  return items.length ? Math.round(items.filter(x => x.done).length / items.length * 100) : 0;
+}
+
+function getDisplayStatus(p) {
+  if (p.status === 3) return 4; // Terminé (manual)
+  const lp = launchProgress(p);
+  const ap = atelierProgress(p);
+  if (lp === 0)                   return 0; // Nouveau
+  if (lp < 100)                   return 1; // En étude
+  if (lp === 100 && ap < 100)     return 2; // En production
+  return 3;                                  // Prêt à livrer
+}
 
 // ═══ Progress ════════════════════════════════════════
 function progressColor(pct) {
@@ -274,8 +304,8 @@ function deliveryHTML(dateStr) {
 
 // ═══ Render ═══════════════════════════════════════════
 function render() {
-  const byStatus = [0,1,2,3].map(s => _projects.filter(p => p.status === s));
-  document.getElementById('board').innerHTML = [0,1,2,3].map(s => {
+  const byStatus = [0,1,2,3,4].map(s => _projects.filter(p => getDisplayStatus(p) === s));
+  document.getElementById('board').innerHTML = [0,1,2,3,4].map(s => {
     const list = byStatus[s];
     const cards = list.length === 0
       ? `<div class="empty-col">Aucun projet</div>`
