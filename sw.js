@@ -1,5 +1,5 @@
-// Service Worker — Ebanista Production v1.3
-const CACHE = 'ebanista-v1.3';
+// Service Worker — Ebanista Production v1.6
+const CACHE = 'ebanista-v1.6';
 const ASSETS = ['./index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
@@ -15,6 +15,8 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
+  // Laisser passer toutes les requêtes externes (Drive API, Google Auth, etc.)
+  if (!e.request.url.startsWith(self.location.origin)) return;
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => cached))
   );

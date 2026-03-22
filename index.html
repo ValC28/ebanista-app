@@ -403,7 +403,13 @@ function renderDashboard() {
     <div class="screen" style="padding-top:16px">
       <div class="dashboard-header">
         <div class="dashboard-title">Projets</div>
-        <button class="btn-new" onclick="openNewProject()">Nouveau</button>
+        <div style="display:flex;gap:8px;align-items:center">
+          ${_driveClientId ? `
+          <button onclick="_driveAuth(()=>drivePull())"
+            style="background:var(--gray3);border:none;border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;touch-action:manipulation;color:var(--text2);display:flex;align-items:center;justify-content:center"
+            title="Synchroniser depuis Drive">↻</button>` : ''}
+          <button class="btn-new" onclick="openNewProject()">Nouveau</button>
+        </div>
       </div>
       <div class="search-bar">
         <input type="search" placeholder="Rechercher…" value="${state.search}"
@@ -432,7 +438,7 @@ function renderDashboard() {
             <p>${p.identification.client || 'Client non renseigné'} · ${p.identification.adresseChantier || '—'}</p>
             <div style="margin-top:6px">
               <div class="progress-bar-wrap">
-                <div class="progress-bar" style="width:${prog}%"></div>
+                <div class="progress-bar" style="width:${prog}%;background:${progressColor(prog)}"></div>
               </div>
             </div>
           </div>
@@ -461,6 +467,14 @@ function calcProgress(p) {
   addObj(p.atelier.controleQualite);                                  // Atelier
   addArr(p.pose.suiviInstallation);                                   // Pose
   return total ? Math.round(done / total * 100) : 0;
+}
+
+function progressColor(pct) {
+  if (pct === 0)   return 'var(--gray2)';   // gris — non commencé
+  if (pct < 34)    return 'var(--red)';     // rouge — démarrage
+  if (pct < 67)    return 'var(--orange)';  // orange — en cours
+  if (pct < 100)   return 'var(--blue)';    // bleu — avancé
+  return 'var(--green)';                    // vert — terminé
 }
 
 // ─── Project View ─────────────────────────────────────
@@ -1271,8 +1285,8 @@ async function _driveAPI(method, path, body) {
 }
 
 function createProjectFolder(p) {
-  const parts = [p.identification.codeProjet, p.identification.nomProjet]
-    .filter(s => s && s !== 'EBA-');
+  const parts = [p.identification.codeProjet, p.identification.client, p.identification.nomProjet]
+    .filter(s => s && s.trim() && s !== 'EBA-');
   const name = parts.join(' — ') || ('Projet ' + new Date().toLocaleDateString('fr-FR'));
   _driveAuth(async () => {
     try {
@@ -1427,9 +1441,16 @@ async function drivePush(force = false) {
   }
 }
 
-// Tentative de synchronisation silencieuse au démarrage
+// Détection iOS — prompt:'none' bloque les iframes cross-origin sur Safari/iOS
+function _isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+// Tentative de synchronisation silencieuse au démarrage (desktop uniquement)
 function driveAutoSync() {
   if (!_driveClientId || !_driveClient) return;
+  if (_isIOS()) return; // sur iPad : sync manuel via le bouton Drive
   _drivePending   = () => drivePull();
   _silentAuthMode = true;
   try { _driveClient.requestAccessToken({ prompt: 'none' }); }
