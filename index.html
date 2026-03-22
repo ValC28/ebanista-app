@@ -254,6 +254,7 @@ let state = {
 // ── Persistence ──────────────────────────────────────
 function save() {
   try { localStorage.setItem('ebanista_v1', JSON.stringify(state.projects)); } catch(e) {}
+  if (_driveClientId && _driveToken) drivePush();
 }
 function load() {
   try {
@@ -392,9 +393,12 @@ function renderDashboard() {
         <div style="width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px">🪵</div>
         <h1>Ebanista Production</h1>
       </div>
-      <button onclick="showPinForDrive()" style="background:none;border:none;cursor:pointer;padding:4px;touch-action:manipulation;opacity:${_driveClientId?'1':'.45'}" title="Google Drive">
-        <svg width="22" height="22" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg"><path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066DA"/><path d="M43.65 25L29.9 1.2C28.55 2 27.4 3.1 26.6 4.5L1.2 48.55C.4 49.95 0 51.5 0 53.05h27.5z" fill="#00AC47"/><path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l7.75 20.8z" fill="#EA4335"/><path d="M43.65 25L57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z" fill="#00832D"/><path d="M59.8 53.05H27.5L13.75 76.85c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684FC"/><path d="M73.4 26.5l-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25l16.15 28.05H87.3c0-1.55-.4-3.1-1.2-4.5z" fill="#FFBA00"/></svg>
-      </button>
+      <div style="position:relative;display:inline-flex">
+        <button onclick="showPinForDrive()" style="background:none;border:none;cursor:pointer;padding:4px;touch-action:manipulation;opacity:${_driveClientId?'1':'.45'}" title="Google Drive">
+          <svg width="22" height="22" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg"><path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066DA"/><path d="M43.65 25L29.9 1.2C28.55 2 27.4 3.1 26.6 4.5L1.2 48.55C.4 49.95 0 51.5 0 53.05h27.5z" fill="#00AC47"/><path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l7.75 20.8z" fill="#EA4335"/><path d="M43.65 25L57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z" fill="#00832D"/><path d="M59.8 53.05H27.5L13.75 76.85c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684FC"/><path d="M73.4 26.5l-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25l16.15 28.05H87.3c0-1.55-.4-3.1-1.2-4.5z" fill="#FFBA00"/></svg>
+        </button>
+        ${_driveClientId ? `<div id="syncDot" style="position:absolute;top:2px;right:2px;width:9px;height:9px;border-radius:50%;background:${{idle:'#8E8E93',syncing:'#FF9500',ok:'#34C759',error:'#FF3B30'}[_syncStatus]||'#8E8E93'};border:2px solid var(--card);pointer-events:none"></div>` : ''}
+      </div>
     </div>
     <div class="screen" style="padding-top:16px">
       <div class="dashboard-header">
@@ -1196,17 +1200,27 @@ function viewPhoto(tab, i) {
 }
 
 // ─── Google Drive Integration ──────────────────────────
-let _driveClientId = localStorage.getItem('ebanista_gcid') || '';
-let _driveToken = null;
+let _driveClientId   = localStorage.getItem('ebanista_gcid')  || '';
+let _driveToken      = null;
 let _driveTokenExpiry = 0;
-let _driveClient = null;
-let _drivePending = null;
+let _driveClient     = null;
+let _drivePending    = null;
+
+// ── Sync state ──
+const DRIVE_DATA_FILE = 'ebanista-data.json';
+let _driveSyncFileId  = localStorage.getItem('ebanista_dfid') || null;
+let _silentAuthMode   = false;
+let _syncStatus       = 'idle'; // 'idle' | 'syncing' | 'ok' | 'error'
+let _syncPushTimer    = null;
 
 window.addEventListener('load', () => {
   const poll = setInterval(() => {
     if (window.google?.accounts?.oauth2) {
       clearInterval(poll);
-      if (_driveClientId) _initDriveClient();
+      if (_driveClientId) {
+        _initDriveClient();
+        setTimeout(driveAutoSync, 1200); // tentative silencieuse au démarrage
+      }
     }
   }, 300);
   setTimeout(() => clearInterval(poll), 15000);
@@ -1219,8 +1233,15 @@ function _initDriveClient() {
       scope: 'https://www.googleapis.com/auth/drive.file',
       hint: 'ebanista.atelier@gmail.com',
       callback(resp) {
-        if (resp.error) { toast('Erreur Google Auth'); _drivePending = null; return; }
-        _driveToken = resp.access_token;
+        if (resp.error) {
+          if (!_silentAuthMode) toast('Erreur Google Auth');
+          _drivePending    = null;
+          _silentAuthMode  = false;
+          if (_syncStatus === 'syncing') _setSyncStatus('idle');
+          return;
+        }
+        _silentAuthMode   = false;
+        _driveToken       = resp.access_token;
         _driveTokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
         const cb = _drivePending; _drivePending = null;
         if (cb) cb();
@@ -1292,6 +1313,129 @@ async function loadDriveFiles(projectId) {
   });
 }
 
+// ─── Drive Sync (centralisation multi-appareils) ────────
+
+function _setSyncStatus(s) {
+  _syncStatus = s;
+  const dot = document.getElementById('syncDot');
+  if (!dot) return;
+  const c = { idle:'#8E8E93', syncing:'#FF9500', ok:'#34C759', error:'#FF3B30' };
+  dot.style.background = c[s] || c.idle;
+  dot.title = { idle:'Non synchronisé', syncing:'Synchronisation…', ok:'Synchronisé', error:'Erreur de synchro' }[s] || '';
+}
+
+// Upload (création ou mise à jour du fichier JSON dans Drive)
+async function _driveUploadFile(fileId, contentObj) {
+  const json = JSON.stringify(contentObj);
+  if (fileId) {
+    const r = await fetch(
+      `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
+      { method:'PATCH', headers:{'Authorization':'Bearer '+_driveToken,'Content-Type':'application/json'}, body:json }
+    );
+    if (!r.ok) throw new Error('Upload ' + r.status);
+    return fileId;
+  } else {
+    const boundary = 'ebanista_' + Date.now();
+    const meta = JSON.stringify({ name: DRIVE_DATA_FILE, mimeType: 'application/json' });
+    const body = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${json}\r\n--${boundary}--`;
+    const r = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+      { method:'POST', headers:{'Authorization':'Bearer '+_driveToken,'Content-Type':`multipart/related; boundary="${boundary}"`}, body }
+    );
+    if (!r.ok) throw new Error('Create ' + r.status);
+    const data = await r.json();
+    _driveSyncFileId = data.id;
+    localStorage.setItem('ebanista_dfid', data.id);
+    return data.id;
+  }
+}
+
+// Téléchargement du contenu du fichier JSON
+async function _driveDownloadFile(fileId) {
+  const r = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+    { headers: { 'Authorization': 'Bearer ' + _driveToken } }
+  );
+  if (!r.ok) throw new Error('Download ' + r.status);
+  return r.json();
+}
+
+// Recherche du fichier de données dans Drive
+async function _findDataFile() {
+  const q = encodeURIComponent(`name='${DRIVE_DATA_FILE}' and trashed=false`);
+  const data = await _driveAPI('GET', `files?q=${q}&fields=files(id)&pageSize=1`);
+  return data.files?.[0]?.id || null;
+}
+
+// PULL : Drive → cet appareil (source de vérité = Drive)
+async function drivePull() {
+  if (!_driveClientId || !_driveToken) return false;
+  try {
+    _setSyncStatus('syncing');
+    if (!_driveSyncFileId) {
+      _driveSyncFileId = await _findDataFile();
+      if (_driveSyncFileId) localStorage.setItem('ebanista_dfid', _driveSyncFileId);
+    }
+    if (!_driveSyncFileId) {
+      // Pas encore de fichier — on crée avec l'état actuel
+      await drivePush(true);
+      return false;
+    }
+    const remote = await _driveDownloadFile(_driveSyncFileId);
+    if (remote?.projects) {
+      state.projects = remote.projects;
+      try { localStorage.setItem('ebanista_v1', JSON.stringify(state.projects)); } catch(e) {}
+      render();
+      localStorage.setItem('ebanista_last_sync', Date.now());
+      _setSyncStatus('ok');
+      toast('☁️ Projets synchronisés');
+      return true;
+    }
+    _setSyncStatus('ok');
+    return false;
+  } catch(e) {
+    console.error('Drive pull', e);
+    if (_driveSyncFileId && /40[04]/.test(e.message)) {
+      // ID périmé — on réessaie sans ID
+      _driveSyncFileId = null; localStorage.removeItem('ebanista_dfid');
+      try { return await drivePull(); } catch(e2) {}
+    }
+    _setSyncStatus('error');
+    return false;
+  }
+}
+
+// PUSH : cet appareil → Drive (avec debounce 2 s)
+async function drivePush(force = false) {
+  if (!_driveClientId || !_driveToken) return;
+  if (!force) {
+    clearTimeout(_syncPushTimer);
+    _syncPushTimer = setTimeout(() => drivePush(true), 2000);
+    return;
+  }
+  try {
+    _setSyncStatus('syncing');
+    _driveSyncFileId = await _driveUploadFile(_driveSyncFileId, { projects: state.projects });
+    localStorage.setItem('ebanista_last_sync', Date.now());
+    _setSyncStatus('ok');
+  } catch(e) {
+    console.error('Drive push', e);
+    if (_driveSyncFileId && /40[04]/.test(e.message)) {
+      _driveSyncFileId = null; localStorage.removeItem('ebanista_dfid');
+      try { await drivePush(true); } catch(e2) { _setSyncStatus('error'); }
+    } else { _setSyncStatus('error'); }
+  }
+}
+
+// Tentative de synchronisation silencieuse au démarrage
+function driveAutoSync() {
+  if (!_driveClientId || !_driveClient) return;
+  _drivePending   = () => drivePull();
+  _silentAuthMode = true;
+  try { _driveClient.requestAccessToken({ prompt: 'none' }); }
+  catch(e) { _drivePending = null; _silentAuthMode = false; }
+}
+
 function renderDriveSection(p) {
   const folder = p.identification?.driveFolder;
   if (!_driveClientId) return `
@@ -1342,6 +1486,11 @@ function renderDriveSection(p) {
 function showDriveSetup() {
   const existing = document.getElementById('driveSetupOverlay');
   if (existing) { existing.remove(); return; }
+  const lastSync = localStorage.getItem('ebanista_last_sync');
+  const lastSyncTxt = lastSync
+    ? 'Dernière synchro : ' + new Date(parseInt(lastSync)).toLocaleString('fr-FR')
+    : 'Jamais synchronisé';
+  const syncColor = { idle:'#8E8E93', syncing:'#FF9500', ok:'#34C759', error:'#FF3B30' }[_syncStatus] || '#8E8E93';
   const ov = document.createElement('div');
   ov.id = 'driveSetupOverlay';
   ov.className = 'pin-overlay';
@@ -1349,9 +1498,15 @@ function showDriveSetup() {
   ov.innerHTML = `
     <div class="pin-modal" style="width:360px;max-width:92vw;text-align:left" onclick="event.stopPropagation()">
       <h3 style="text-align:center;margin-bottom:8px">📁 Google Drive</h3>
-      <p style="text-align:center;margin-bottom:16px;font-size:14px">Liez l'app à Google Drive pour créer des dossiers projets automatiquement.</p>
+      ${_driveClientId ? `
+      <div style="background:var(--gray3);border-radius:10px;padding:12px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
+        <div style="width:10px;height:10px;border-radius:50%;background:${syncColor};flex-shrink:0"></div>
+        <div style="flex:1;font-size:12px;color:var(--text2)">${lastSyncTxt}</div>
+        <button onclick="document.getElementById('driveSetupOverlay').remove();_driveAuth(()=>drivePull())"
+          style="background:var(--blue);color:white;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);touch-action:manipulation;flex-shrink:0">☁ Sync</button>
+      </div>` : '<p style="text-align:center;margin-bottom:14px;font-size:14px">Liez l\'app à Google Drive pour synchroniser les projets sur tous vos appareils.</p>'}
       <div style="background:var(--gray3);border-radius:10px;padding:12px;font-size:12px;line-height:1.7;color:var(--text2);margin-bottom:16px">
-        <strong>Étapes de configuration :</strong><br>
+        <strong>Configuration :</strong><br>
         1. <a href="https://console.cloud.google.com" target="_blank" style="color:var(--blue)">console.cloud.google.com</a> → Nouveau projet<br>
         2. "APIs et services" → Activer <strong>Google Drive API</strong><br>
         3. "Identifiants" → "+ Créer" → <strong>ID client OAuth 2.0</strong><br>
@@ -1368,12 +1523,11 @@ function showDriveSetup() {
       <div style="display:flex;gap:10px">
         <button onclick="document.getElementById('driveSetupOverlay').remove()"
           style="flex:1;background:var(--gray3);border:none;border-radius:10px;padding:13px;font-size:15px;cursor:pointer;font-family:var(--font);touch-action:manipulation">Annuler</button>
-        <button onclick="(function(){const v=document.getElementById('driveClientInput').value.trim();if(!v)return;_driveClientId=v;localStorage.setItem('ebanista_gcid',v);_initDriveClient();document.getElementById('driveSetupOverlay').remove();render();toast('Drive configuré ✓');})()"
+        <button onclick="(function(){const v=document.getElementById('driveClientInput').value.trim();if(!v)return;_driveClientId=v;localStorage.setItem('ebanista_gcid',v);_initDriveClient();document.getElementById('driveSetupOverlay').remove();render();toast('Drive configuré ✓');setTimeout(()=>_driveAuth(()=>drivePull()),600);})()"
           style="flex:2;background:var(--accent);color:white;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font);touch-action:manipulation">Enregistrer</button>
       </div>
     </div>`;
   document.body.appendChild(ov);
-  // affiche l'origine exacte de la page pour Google Cloud Console
   const hint = document.getElementById('driveOriginHint');
   if (hint) hint.textContent = window.location.origin;
   setTimeout(() => document.getElementById('driveClientInput')?.focus(), 150);
