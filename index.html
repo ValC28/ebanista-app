@@ -471,7 +471,6 @@ function calcProgress(p) {
   let done = 0, total = 0;
   const addArr = arr => { total += arr.length; done += arr.filter(Boolean).length; };
   const addObj = arr => { total += arr.length; done += arr.filter(x=>x.done).length; };
-  addArr(p.identification.statutAvancement);                          // Identification
   addArr([...p.lancement.dossierTech,...p.lancement.fichiersProd,...p.lancement.matieresFourn,...p.lancement.pointsCritiques]); // Lancement
   addObj(p.atelier.controleQualite);                                  // Atelier
   addArr(p.pose.suiviInstallation);                                   // Pose
@@ -567,16 +566,6 @@ function renderIdentification(p) {
   </div>
 
   <div class="form-section">
-    <div class="form-section-title">Statut d'avancement projet</div>
-    ${statutLabels.map((l,i) => checkRow(l, id.statutAvancement[i], `toggleCheck('identification','statutAvancement',${i})`)).join('')}
-  </div>
-
-  <div class="form-section">
-    <div class="form-section-title">Checklist documentaire</div>
-    ${docLabels.map((l,i) => checkRow(l, id.checklistDoc[i], `toggleCheck('identification','checklistDoc',${i})`)).join('')}
-  </div>
-
-  <div class="form-section">
     <div class="form-section-title">Synthèse risques / Points sensibles</div>
     <div class="form-row">
       <textarea class="form-input full" rows="5" placeholder="Notes, risques, points d'attention…"
@@ -592,7 +581,7 @@ function renderIdentification(p) {
 
   ${renderDriveSection(p)}
 
-  ${renderTabValidation('Identification', id.statutAvancement.filter(Boolean).length, id.statutAvancement.length, p)}`;
+  `;
 }
 
 // ─── Tab 1: Lancement Production ──────────────────────

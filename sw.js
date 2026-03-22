@@ -1,5 +1,5 @@
-// Service Worker — Ebanista Production v1.8
-const CACHE = 'ebanista-v1.8';
+// Service Worker — Ebanista Production v1.9
+const CACHE = 'ebanista-v1.9';
 const ASSETS = ['./index.html', './manifest.json', './logo.png'];
 
 self.addEventListener('install', e => {
