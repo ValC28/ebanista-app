@@ -392,7 +392,7 @@ function renderDashboard() {
         <div style="width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px">🪵</div>
         <h1>Ebanista Production</h1>
       </div>
-      <button onclick="showDriveSetup()" style="background:none;border:none;cursor:pointer;padding:4px;touch-action:manipulation;opacity:${_driveClientId?'1':'.45'}" title="Google Drive">
+      <button onclick="showPinForDrive()" style="background:none;border:none;cursor:pointer;padding:4px;touch-action:manipulation;opacity:${_driveClientId?'1':'.45'}" title="Google Drive">
         <svg width="22" height="22" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg"><path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066DA"/><path d="M43.65 25L29.9 1.2C28.55 2 27.4 3.1 26.6 4.5L1.2 48.55C.4 49.95 0 51.5 0 53.05h27.5z" fill="#00AC47"/><path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l7.75 20.8z" fill="#EA4335"/><path d="M43.65 25L57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z" fill="#00832D"/><path d="M59.8 53.05H27.5L13.75 76.85c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684FC"/><path d="M73.4 26.5l-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25l16.15 28.05H87.3c0-1.55-.4-3.1-1.2-4.5z" fill="#FFBA00"/></svg>
       </button>
     </div>
@@ -933,22 +933,21 @@ function switchTab(i) {
   document.querySelector('.screen').scrollTo(0,0);
 }
 
-// ─── PIN Delete ────────────────────────────────────────
-let _pinTarget = null;
-let _pinEntry = '';
+// ─── PIN (générique) ───────────────────────────────────
+let _pinTarget   = null;  // id projet pour suppression
+let _pinCallback = null;  // callback déclenché si PIN correct
+let _pinEntry    = '';
 
-function showDeleteModal(projectId) {
-  _pinTarget = projectId;
+function _showPinModal(title, subtitle, callback) {
+  _pinCallback = callback;
   _pinEntry = '';
-  const p = getProject(projectId);
-  const name = p ? (p.identification.codeProjet || 'ce projet') : 'ce projet';
   const overlay = document.createElement('div');
   overlay.id = 'pinOverlay';
   overlay.className = 'pin-overlay';
   overlay.innerHTML = `
     <div class="pin-modal" onclick="event.stopPropagation()">
-      <h3>Supprimer le projet</h3>
-      <p>Entrez le code à 4 chiffres pour supprimer <strong>${name}</strong></p>
+      <h3>${title}</h3>
+      <p>${subtitle}</p>
       <div class="pin-dots" id="pinDots">
         <div class="pin-dot" id="pd0"></div>
         <div class="pin-dot" id="pd1"></div>
@@ -967,11 +966,41 @@ function showDeleteModal(projectId) {
   document.body.appendChild(overlay);
 }
 
+function showDeleteModal(projectId) {
+  _pinTarget = projectId;
+  const p = getProject(projectId);
+  const name = p ? (p.identification.codeProjet || 'ce projet') : 'ce projet';
+  _showPinModal(
+    'Supprimer le projet',
+    `Entrez le code à 4 chiffres pour supprimer <strong>${name}</strong>`,
+    () => {
+      const idToDelete = _pinTarget;
+      _pinTarget = null;
+      state.projects = state.projects.filter(p => p.id !== idToDelete);
+      if (state.screen === 'project' && state.currentProject === idToDelete) {
+        state.screen = 'dashboard';
+      }
+      save();
+      render();
+      toast('Projet supprimé');
+    }
+  );
+}
+
+function showPinForDrive() {
+  _showPinModal(
+    '🔒 Accès Drive',
+    'Entrez le code à 4 chiffres pour accéder aux paramètres Drive',
+    () => showDriveSetup()
+  );
+}
+
 function closePinModal() {
   const el = document.getElementById('pinOverlay');
   if (el) el.remove();
-  _pinTarget = null;
-  _pinEntry = '';
+  _pinTarget   = null;
+  _pinCallback = null;
+  _pinEntry    = '';
 }
 
 function updatePinDots(error) {
@@ -988,15 +1017,9 @@ function pinKey(digit) {
   updatePinDots(false);
   if (_pinEntry.length === 4) {
     if (_pinEntry === '2623') {
-      const idToDelete = _pinTarget;
+      const cb = _pinCallback;
       closePinModal();
-      state.projects = state.projects.filter(p => p.id !== idToDelete);
-      if (state.screen === 'project' && state.currentProject === idToDelete) {
-        state.screen = 'dashboard';
-      }
-      save();
-      render();
-      toast('Projet supprimé');
+      if (cb) cb();
     } else {
       document.getElementById('pinError').textContent = 'Code incorrect';
       updatePinDots(true);
