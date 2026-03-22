@@ -114,6 +114,17 @@
     .proj-client { font-size: 12px; color: var(--text3); white-space: nowrap;
                    overflow: hidden; text-overflow: ellipsis; margin-bottom: 9px; }
 
+    .delivery-row { display: flex; align-items: center; justify-content: space-between;
+                    margin-bottom: 9px; gap: 6px; }
+    .delivery-date { font-size: 11px; color: var(--text3); flex-shrink: 0; }
+    .delivery-badge { font-size: 10px; font-weight: 700; padding: 2px 8px;
+                      border-radius: 20px; white-space: nowrap; }
+    .badge-ok      { background: rgba(52,199,89,.15);  color: #34C759; }
+    .badge-warn    { background: rgba(255,149,0,.15);   color: #FF9500; }
+    .badge-urgent  { background: rgba(255,59,48,.18);   color: #FF3B30; }
+    .badge-late    { background: #FF3B30; color: white; }
+    .badge-none    { background: rgba(255,255,255,.07); color: var(--text3); }
+
     .prog-wrap { height: 5px; background: rgba(255,255,255,.08);
                  border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
     .prog-bar  { height: 100%; border-radius: 3px; transition: width .6s ease; }
@@ -226,6 +237,41 @@ function calcProgress(p) {
   return total ? Math.round(done / total * 100) : 0;
 }
 
+// ═══ Jours ouvrables ═════════════════════════════════
+function workingDaysLeft(dateStr) {
+  if (!dateStr) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const target = new Date(dateStr); target.setHours(0,0,0,0);
+  const diff = target - today;
+  if (diff < 0) return -1; // retard
+  if (diff === 0) return 0; // aujourd'hui
+  let count = 0;
+  const d = new Date(today);
+  while (d < target) {
+    d.setDate(d.getDate() + 1);
+    const day = d.getDay();
+    if (day !== 0 && day !== 6) count++; // lun–ven
+  }
+  return count;
+}
+
+function deliveryHTML(dateStr) {
+  if (!dateStr) return '';
+  const days = workingDaysLeft(dateStr);
+  const dateLabel = new Date(dateStr).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' });
+  let badgeClass, badgeText;
+  if (days === -1) { badgeClass = 'badge-late';   badgeText = '⚠ Retard'; }
+  else if (days === 0) { badgeClass = 'badge-urgent'; badgeText = "Aujourd'hui"; }
+  else if (days <= 3) { badgeClass = 'badge-urgent'; badgeText = `${days} j. ouv.`; }
+  else if (days <= 7) { badgeClass = 'badge-warn';   badgeText = `${days} j. ouv.`; }
+  else               { badgeClass = 'badge-ok';     badgeText = `${days} j. ouv.`; }
+  return `
+    <div class="delivery-row">
+      <span class="delivery-date">📦 ${dateLabel}</span>
+      <span class="delivery-badge ${badgeClass}">${badgeText}</span>
+    </div>`;
+}
+
 // ═══ Render ═══════════════════════════════════════════
 function render() {
   const byStatus = [0,1,2,3].map(s => _projects.filter(p => p.status === s));
@@ -236,9 +282,10 @@ function render() {
       : list.map(p => {
           const pct    = calcProgress(p);
           const color  = progressColor(pct);
-          const ref    = p.identification?.codeProjet || '';
-          const name   = p.identification?.nomProjet  || '';
-          const client = p.identification?.client     || '';
+          const ref    = p.identification?.codeProjet    || '';
+          const name   = p.identification?.nomProjet     || '';
+          const client = p.identification?.client        || '';
+          const deliv  = p.identification?.dateLivraison || '';
           const title  = name || client || 'Sans nom';
           const sub    = name && client ? client : '';
           return `
@@ -246,6 +293,7 @@ function render() {
               ${ref ? `<div class="proj-ref">${ref}</div>` : ''}
               <div class="proj-name">${title}</div>
               ${sub ? `<div class="proj-client">${sub}</div>` : ''}
+              ${deliveryHTML(deliv)}
               <div class="prog-wrap">
                 <div class="prog-bar" style="width:${pct}%;background:${color}"></div>
               </div>
@@ -362,19 +410,28 @@ function showAuth() {
 
 function showSetup() {
   removeOverlay();
+  const origin = window.location.origin;
+  const isFile = origin === 'null' || origin.startsWith('file');
   const ov = document.createElement('div');
   ov.id = 'setupOv'; ov.className = 'overlay';
   ov.innerHTML = `
     <div class="overlay-card">
       <div class="overlay-icon">⚙️</div>
       <div class="overlay-title">Configuration</div>
-      <div class="overlay-desc">
-        Entrez le même Client ID OAuth que celui configuré dans l'app Ebanista.
-      </div>
+      ${isFile ? `
+      <div style="background:#FF3B3022;border:1px solid #FF3B30;border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;color:#FF3B30;line-height:1.5">
+        ⚠️ Ouvre cette page depuis <strong>GitHub Pages</strong><br>
+        (pas depuis un fichier local).<br>
+        URL : <code style="font-size:11px">https://valc28.github.io/ebanista-app/display.html</code>
+      </div>` : `
+      <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;margin-bottom:16px;font-size:12px;color:rgba(255,255,255,.5);line-height:1.7">
+        Origine à ajouter dans Google Cloud Console :<br>
+        <span style="font-family:monospace;color:#C5972A;font-size:11px">${origin}</span>
+      </div>`}
       <span class="overlay-label">Client ID OAuth 2.0</span>
       <input id="setupIn" class="overlay-input" type="text"
         placeholder="1234…apps.googleusercontent.com" value="${_clientId}">
-      <button class="overlay-btn" onclick="saveSetup()">Connecter</button>
+      <button class="overlay-btn" ${isFile ? 'disabled style="opacity:.4;cursor:not-allowed"' : `onclick="saveSetup()"`}>Connecter</button>
     </div>`;
   document.body.appendChild(ov);
   setTimeout(() => document.getElementById('setupIn')?.focus(), 100);
