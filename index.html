@@ -249,17 +249,24 @@ let state = {
   currentProject: null,
   currentTab: 0,
   search: '',
+  lastModified: 0,
 };
 
 // ── Persistence ──────────────────────────────────────
 function save() {
-  try { localStorage.setItem('ebanista_v1', JSON.stringify(state.projects)); } catch(e) {}
+  state.lastModified = Date.now();
+  try {
+    localStorage.setItem('ebanista_v1', JSON.stringify(state.projects));
+    localStorage.setItem('ebanista_v1_ts', state.lastModified);
+  } catch(e) {}
   if (_driveClientId && _driveToken) drivePush();
 }
 function load() {
   try {
     const d = localStorage.getItem('ebanista_v1');
     if (d) state.projects = JSON.parse(d);
+    const ts = localStorage.getItem('ebanista_v1_ts');
+    if (ts) state.lastModified = parseInt(ts);
   } catch(e) {}
 }
 
@@ -390,7 +397,9 @@ function renderDashboard() {
   <div id="app">
     <div class="nav-bar">
       <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px">🪵</div>
+        <div style="width:36px;height:36px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;padding:5px">
+          <img src="logo.png" style="width:100%;height:100%;object-fit:contain;filter:brightness(0) invert(1)">
+        </div>
         <h1>Ebanista Production</h1>
       </div>
       <div style="position:relative;display:inline-flex">
@@ -419,7 +428,7 @@ function renderDashboard() {
 
   if (filtered.length === 0) {
     html += `<div class="empty-state">
-      <div class="icon">🪵</div>
+      <div class="icon"><img src="logo.png" style="width:64px;height:64px;object-fit:contain;opacity:.25"></div>
       <h3>${state.search ? 'Aucun résultat' : 'Aucun projet'}</h3>
       <p>${state.search ? 'Modifiez votre recherche' : 'Créez votre premier projet de fabrication'}</p>
     </div>`;
@@ -432,7 +441,7 @@ function renderDashboard() {
         const prog = calcProgress(p);
         html += `
         <div class="project-card" onclick="openProject('${p.id}')">
-          <div class="project-icon">🪵</div>
+          <div class="project-icon"><img src="logo.png" style="width:32px;height:32px;object-fit:contain;filter:brightness(0) invert(1)"></div>
           <div class="project-info">
             <h3>${p.identification.codeProjet || 'Sans code'}${p.identification.nomProjet ? ' — ' + p.identification.nomProjet : ''}</h3>
             <p>${p.identification.client || 'Client non renseigné'} · ${p.identification.adresseChantier || '—'}</p>
@@ -1397,8 +1406,20 @@ async function drivePull() {
     }
     const remote = await _driveDownloadFile(_driveSyncFileId);
     if (remote?.projects) {
+      const remoteTs = remote.lastModified || 0;
+      const localTs  = state.lastModified  || 0;
+      if (remoteTs <= localTs) {
+        // Local plus récent — on push vers Drive plutôt qu'écraser
+        _setSyncStatus('ok');
+        drivePush(true);
+        return false;
+      }
       state.projects = remote.projects;
-      try { localStorage.setItem('ebanista_v1', JSON.stringify(state.projects)); } catch(e) {}
+      state.lastModified = remoteTs;
+      try {
+        localStorage.setItem('ebanista_v1', JSON.stringify(state.projects));
+        localStorage.setItem('ebanista_v1_ts', remoteTs);
+      } catch(e) {}
       render();
       localStorage.setItem('ebanista_last_sync', Date.now());
       _setSyncStatus('ok');
@@ -1429,7 +1450,7 @@ async function drivePush(force = false) {
   }
   try {
     _setSyncStatus('syncing');
-    _driveSyncFileId = await _driveUploadFile(_driveSyncFileId, { projects: state.projects });
+    _driveSyncFileId = await _driveUploadFile(_driveSyncFileId, { projects: state.projects, lastModified: state.lastModified || Date.now() });
     localStorage.setItem('ebanista_last_sync', Date.now());
     _setSyncStatus('ok');
   } catch(e) {
