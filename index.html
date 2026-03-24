@@ -1014,7 +1014,7 @@ function showPinForDrive() {
 function closePinModal() {
   const el = document.getElementById('pinOverlay');
   if (el) el.remove();
-  _pinTarget   = null;
+  // Ne pas réinitialiser _pinTarget ici : le callback en a encore besoin
   _pinCallback = null;
   _pinEntry    = '';
 }
@@ -1074,7 +1074,8 @@ function openNewProject() {
   state.projects.unshift(p);
   save();
   openProject(p.id);
-  if (_driveClientId) createProjectFolder(p);
+  // Ne pas créer le dossier Drive ici : les champs d'identification sont encore vides
+  // → l'utilisateur crée le dossier manuellement depuis l'onglet identification
 }
 
 function saveAndToast() {
@@ -1395,24 +1396,28 @@ async function drivePull() {
     }
     const remote = await _driveDownloadFile(_driveSyncFileId);
     if (remote?.projects) {
-      const remoteTs = remote.lastModified || 0;
-      const localTs  = state.lastModified  || 0;
-      if (remoteTs <= localTs) {
-        // Local plus récent — on push vers Drive plutôt qu'écraser
-        _setSyncStatus('ok');
-        drivePush(true);
-        return false;
-      }
-      state.projects = remote.projects;
-      state.lastModified = remoteTs;
+      // Fusion : projets Drive + projets locaux non encore synchronisés
+      // (évite la perte de dossiers créés hors connexion)
+      const remoteIds = new Set(remote.projects.map(p => p.id));
+      const localOnly = state.projects.filter(p => !remoteIds.has(p.id));
+      state.projects = [...remote.projects, ...localOnly];
+      state.lastModified = remote.lastModified || Date.now();
       try {
         localStorage.setItem('ebanista_v1', JSON.stringify(state.projects));
-        localStorage.setItem('ebanista_v1_ts', remoteTs);
+        localStorage.setItem('ebanista_v1_ts', state.lastModified);
       } catch(e) {}
       render();
       localStorage.setItem('ebanista_last_sync', Date.now());
-      _setSyncStatus('ok');
-      toast('☁️ Projets synchronisés');
+      // Si des projets locaux n'étaient pas encore sur Drive, on pousse la fusion
+      if (localOnly.length > 0) {
+        state.lastModified = Date.now();
+        localStorage.setItem('ebanista_v1_ts', state.lastModified);
+        await drivePush(true);
+        toast('☁️ ' + localOnly.length + ' projet(s) récupéré(s) et fusionné(s)');
+      } else {
+        _setSyncStatus('ok');
+        toast('☁️ Projets synchronisés');
+      }
       return true;
     }
     _setSyncStatus('ok');
