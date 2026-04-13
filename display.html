@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ebanista — Tableau de Bord</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="ebanista-core.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:      #0b0b12;
+      --gray2:   rgba(255,255,255,.15); /* pour progressColor() partagée */
+      --card:    #16161f;
+      --card2:   #1e1e2a;
+      --accent:  #C5972A;
+      --green:   #34C759;
+      --red:     #FF3B30;
+      --orange:  #FF9500;
+      --blue:    #007AFF;
+      --gray:    #8E8E93;
+      --text:    #FFFFFF;
+      --text2:   rgba(235,235,245,.75);
+      --text3:   rgba(235,235,245,.40);
+      --font:    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+    }
+
+    html, body {
+      height: 100%; overflow: hidden;
+      background: var(--bg);
+      font-family: var(--font);
+      color: var(--text);
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 40px;
+      background: rgba(255,255,255,.03);
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      height: 72px; flex-shrink: 0;
+    }
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-icon {
+      width: 40px; height: 40px; background: var(--accent); border-radius: 9px;
+      display: flex; align-items: center; justify-content: center; font-size: 22px;
+    }
+    .brand-name  { font-size: 20px; font-weight: 700; letter-spacing: .3px; }
+    .brand-sub   { font-size: 11px; color: var(--accent); font-weight: 600;
+                   text-transform: uppercase; letter-spacing: 1.2px; margin-top: 2px; }
+    #clock       { font-size: 30px; font-weight: 300; font-variant-numeric: tabular-nums;
+                   text-align: right; }
+    #date        { font-size: 13px; color: var(--text3); text-align: right; margin-top: 2px;
+                   text-transform: capitalize; }
+
+    /* ── Board ── */
+    .board {
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      height: calc(100vh - 72px - 3px);
+    }
+    .column {
+      display: flex; flex-direction: column;
+      border-right: 1px solid rgba(255,255,255,.05);
+      overflow: hidden;
+    }
+    .column:last-child { border-right: none; }
+
+    .col-header {
+      padding: 14px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0; border-bottom: 2px solid;
+    }
+    .col-0 .col-header { border-color: var(--gray); }
+    .col-1 .col-header { border-color: var(--orange); }
+    .col-2 .col-header { border-color: var(--blue); }
+    .col-3 .col-header { border-color: var(--accent); }
+    .col-4 .col-header { border-color: var(--green); }
+
+    .col-title {
+      font-size: 12px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1.2px;
+    }
+    .col-0 .col-title { color: var(--gray); }
+    .col-1 .col-title { color: var(--orange); }
+    .col-2 .col-title { color: var(--blue); }
+    .col-3 .col-title { color: var(--accent); }
+    .col-4 .col-title { color: var(--green); }
+
+    .col-count {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700;
+    }
+    .col-0 .col-count { background: rgba(142,142,147,.15); color: var(--gray); }
+    .col-1 .col-count { background: rgba(255,149,0,.12); color: var(--orange); }
+    .col-2 .col-count { background: rgba(0,122,255,.12); color: var(--blue); }
+    .col-3 .col-count { background: rgba(197,151,42,.15); color: var(--accent); }
+    .col-4 .col-count { background: rgba(52,199,89,.12); color: var(--green); }
+
+    .col-body {
+      flex: 1; overflow-y: auto; padding: 12px 10px;
+      scrollbar-width: none;
+    }
+    .col-body::-webkit-scrollbar { display: none; }
+
+    /* ── Project card ── */
+    .proj-card {
+      background: var(--card2);
+      border-radius: 10px; padding: 12px 14px; margin-bottom: 8px;
+      border: 1px solid rgba(255,255,255,.06);
+      animation: fadeIn .4s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity:1; transform:none; } }
+
+    .proj-ref    { font-size: 11px; font-weight: 700; color: var(--accent);
+                   letter-spacing: .5px; margin-bottom: 3px; }
+    .proj-name   { font-size: 14px; font-weight: 600; white-space: nowrap;
+                   overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
+    .proj-client { font-size: 12px; color: var(--text3); white-space: nowrap;
+                   overflow: hidden; text-overflow: ellipsis; margin-bottom: 9px; }
+
+    .delivery-row { display: flex; align-items: center; justify-content: space-between;
+                    margin-bottom: 9px; gap: 6px; }
+    .delivery-date { font-size: 11px; color: var(--text3); flex-shrink: 0; }
+    .delivery-badge { font-size: 10px; font-weight: 700; padding: 2px 8px;
+                      border-radius: 20px; white-space: nowrap; }
+    .badge-ok      { background: rgba(52,199,89,.15);  color: #34C759; }
+    .badge-warn    { background: rgba(255,149,0,.15);   color: #FF9500; }
+    .badge-urgent  { background: rgba(255,59,48,.18);   color: #FF3B30; }
+    .badge-late    { background: #FF3B30; color: white; }
+    .badge-none    { background: rgba(255,255,255,.07); color: var(--text3); }
+
+    .prog-wrap { height: 5px; background: rgba(255,255,255,.08);
+                 border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
+    .prog-bar  { height: 100%; border-radius: 3px; transition: width .6s ease; }
+    .prog-pct  { font-size: 11px; font-weight: 600; text-align: right; }
+
+    .empty-col { padding: 30px 16px; text-align: center; color: var(--text3); font-size: 13px; }
+
+    /* ── Refresh bar ── */
+    .refresh-bar { height: 3px; background: rgba(255,255,255,.06); }
+    .refresh-fill { height: 100%; background: var(--accent); transition: width 1s linear; }
+
+    /* ── Auth / Setup overlay ── */
+    .overlay {
+      position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,.88); backdrop-filter: blur(20px);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .overlay-card {
+      background: var(--card2); border-radius: 20px; padding: 44px 40px;
+      text-align: center; max-width: 400px; width: 88%;
+      border: 1px solid rgba(255,255,255,.1);
+    }
+    .overlay-icon  { font-size: 52px; margin-bottom: 16px; }
+    .overlay-title { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
+    .overlay-desc  { font-size: 14px; color: var(--text2); line-height: 1.65;
+                     margin-bottom: 24px; }
+    .overlay-btn {
+      background: var(--accent); color: white; border: none;
+      border-radius: 12px; padding: 14px 0; font-size: 16px; font-weight: 600;
+      cursor: pointer; width: 100%; font-family: var(--font);
+    }
+    .overlay-btn:active { opacity: .8; }
+    .overlay-input {
+      width: 100%; background: rgba(255,255,255,.07);
+      border: 1.5px solid rgba(255,255,255,.15); border-radius: 10px;
+      padding: 12px 14px; font-size: 13px; font-family: monospace;
+      color: var(--text); outline: none; margin-bottom: 14px;
+    }
+    .overlay-input:focus { border-color: var(--accent); }
+    .overlay-label { font-size: 12px; color: var(--text3);
+                     display: block; text-align: left; margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="brand">
+      <div class="brand-icon"><img src="logo.png" style="width:26px;height:26px;object-fit:contain;filter:brightness(0) invert(1)"></div>
+      <div>
+        <div class="brand-name">Ebanista</div>
+        <div class="brand-sub">Tableau de Bord Production</div>
+      </div>
+    </div>
+    <div>
+      <div id="clock">--:--:--</div>
+      <div id="date">---</div>
+    </div>
+  </div>
+
+  <div class="board" id="board"></div>
+  <div class="refresh-bar"><div class="refresh-fill" id="rfill" style="width:100%"></div></div>
+
+<script>
+// ═══ Config ═══════════════════════════════════════════
+const REFRESH_SEC     = 60;
+const DRIVE_DATA_FILE = 'ebanista-data.json';
+const STATUS_LABELS   = ['Nouveau', 'En étude', 'En production', 'Prêt à livrer', 'Terminé'];
+
+let _clientId    = localStorage.getItem('ebanista_gcid') || '';
+let _fileId      = localStorage.getItem('ebanista_dfid') || '';
+let _token       = null;
+let _tokenExpiry = 0;
+let _client      = null;
+let _projects    = [];
+let _countdown   = REFRESH_SEC;
+let _rfTimer     = null;
+
+// ═══ Clock ═══════════════════════════════════════════
+function tick() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    n.toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  document.getElementById('date').textContent =
+    n.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+}
+setInterval(tick, 1000); tick();
+
+// ═══ Auto-status ══════════════════════════════════════
+function launchProgress(p) {
+  if (!p.lancement) return 0;
+  const items = [
+    ...(p.lancement.dossierTech    || []),
+    ...(p.lancement.fichiersProd   || []),
+    ...(p.lancement.matieresFourn  || []),
+    ...(p.lancement.pointsCritiques|| [])
+  ];
+  return items.length ? Math.round(items.filter(Boolean).length / items.length * 100) : 0;
+}
+
+function atelierProgress(p) {
+  const items = p.atelier?.controleQualite || [];
+  return items.length ? Math.round(items.filter(x => x.done).length / items.length * 100) : 0;
+}
+
+function getDisplayStatus(p) {
+  if (p.status === 3) return 4; // Terminé (manual)
+  const lp = launchProgress(p);
+  const ap = atelierProgress(p);
+  if (lp === 0)                   return 0; // Nouveau
+  if (lp < 100)                   return 1; // En étude
+  if (lp === 100 && ap < 100)     return 2; // En production
+  return 3;                                  // Prêt à livrer
+}
+
+// calcProgress, progressColor, workingDaysLeft → ebanista-core.js
+
+function deliveryHTML(dateStr) {
+  if (!dateStr) return '';
+  const days = workingDaysLeft(dateStr);
+  const dateLabel = new Date(dateStr).toLocaleDateString('fr-FR', { day:'numeric', month:'short', year:'numeric' });
+  let badgeClass, badgeText;
+  if (days === -1) { badgeClass = 'badge-late';   badgeText = '⚠ Retard'; }
+  else if (days === 0) { badgeClass = 'badge-urgent'; badgeText = "Aujourd'hui"; }
+  else if (days <= 3) { badgeClass = 'badge-urgent'; badgeText = `${days} j. ouv.`; }
+  else if (days <= 7) { badgeClass = 'badge-warn';   badgeText = `${days} j. ouv.`; }
+  else               { badgeClass = 'badge-ok';     badgeText = `${days} j. ouv.`; }
+  return `
+    <div class="delivery-row">
+      <span class="delivery-date">📦 ${dateLabel}</span>
+      <span class="delivery-badge ${badgeClass}">${badgeText}</span>
+    </div>`;
+}
+
+// ═══ Render ═══════════════════════════════════════════
+function render() {
+  const byStatus = [0,1,2,3,4].map(s => _projects.filter(p => getDisplayStatus(p) === s));
+  document.getElementById('board').innerHTML = [0,1,2,3,4].map(s => {
+    const list = byStatus[s];
+    const cards = list.length === 0
+      ? `<div class="empty-col">Aucun projet</div>`
+      : list.map(p => {
+          const pct    = calcProgress(p);
+          const color  = progressColor(pct);
+          const ref    = p.identification?.codeProjet    || '';
+          const name   = p.identification?.nomProjet     || '';
+          const client = p.identification?.client        || '';
+          const deliv  = p.identification?.dateLivraison || '';
+          const title  = name || client || 'Sans nom';
+          const sub    = name && client ? client : '';
+          return `
+            <div class="proj-card">
+              ${ref ? `<div class="proj-ref">${ref}</div>` : ''}
+              <div class="proj-name">${title}</div>
+              ${sub ? `<div class="proj-client">${sub}</div>` : ''}
+              ${deliveryHTML(deliv)}
+              <div class="prog-wrap">
+                <div class="prog-bar" style="width:${pct}%;background:${color}"></div>
+              </div>
+              <div class="prog-pct" style="color:${color}">${pct}%</div>
+            </div>`;
+        }).join('');
+
+    return `
+      <div class="column col-${s}">
+        <div class="col-header">
+          <span class="col-title">${STATUS_LABELS[s]}</span>
+          <span class="col-count">${list.length}</span>
+        </div>
+        <div class="col-body">${cards}</div>
+      </div>`;
+  }).join('');
+}
+
+// ═══ Drive ════════════════════════════════════════════
+window.addEventListener('load', () => {
+  const poll = setInterval(() => {
+    if (window.google?.accounts?.oauth2) {
+      clearInterval(poll);
+      if (_clientId) initClient(); else showSetup();
+    }
+  }, 300);
+  setTimeout(() => { clearInterval(poll); if (!_clientId) showSetup(); }, 10000);
+});
+
+function initClient() {
+  _client = google.accounts.oauth2.initTokenClient({
+    client_id: _clientId,
+    scope: 'https://www.googleapis.com/auth/drive.file',
+    hint: 'ebanista.atelier@gmail.com',
+    callback(resp) {
+      if (resp.error) { showAuth(); return; }
+      _token       = resp.access_token;
+      _tokenExpiry = Date.now() + (resp.expires_in - 60) * 1000;
+      removeOverlay();
+      loadData();
+      startRefresh();
+    }
+  });
+  showAuth();
+}
+
+async function loadData() {
+  if (!_token) return;
+  try {
+    if (!_fileId) {
+      const q = encodeURIComponent(`name='${DRIVE_DATA_FILE}' and trashed=false`);
+      const r = await fetch(
+        `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id)&pageSize=1`,
+        { headers: { Authorization: 'Bearer ' + _token } }
+      );
+      const d = await r.json();
+      _fileId = d.files?.[0]?.id || '';
+      if (_fileId) localStorage.setItem('ebanista_dfid', _fileId);
+    }
+    if (!_fileId) { render(); return; }
+
+    const r = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${_fileId}?alt=media`,
+      { headers: { Authorization: 'Bearer ' + _token } }
+    );
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    if (d?.projects) { _projects = d.projects; render(); }
+  } catch(e) {
+    console.error('loadData:', e);
+    render();
+  }
+}
+
+// ═══ Refresh loop ════════════════════════════════════
+function startRefresh() {
+  _countdown = REFRESH_SEC;
+  if (_rfTimer) clearInterval(_rfTimer);
+  _rfTimer = setInterval(() => {
+    _countdown--;
+    document.getElementById('rfill').style.width = (_countdown / REFRESH_SEC * 100) + '%';
+    if (_countdown <= 0) {
+      _countdown = REFRESH_SEC;
+      if (Date.now() > _tokenExpiry) {
+        _client.requestAccessToken({ prompt: '' }); // renouvelle le token
+      } else {
+        loadData();
+      }
+    }
+  }, 1000);
+}
+
+// ═══ Overlays ════════════════════════════════════════
+function removeOverlay() {
+  document.getElementById('authOv')?.remove();
+  document.getElementById('setupOv')?.remove();
+}
+
+function showAuth() {
+  removeOverlay();
+  const ov = document.createElement('div');
+  ov.id = 'authOv'; ov.className = 'overlay';
+  ov.innerHTML = `
+    <div class="overlay-card">
+      <div class="overlay-icon"><img src="logo.png" style="width:64px;height:64px;object-fit:contain"></div>
+      <div class="overlay-title">Ebanista Production</div>
+      <div class="overlay-desc">
+        Connectez-vous à Google Drive pour afficher l'état d'avancement<br>des projets en temps réel sur cet écran.
+      </div>
+      <button class="overlay-btn" onclick="connectDrive()">Se connecter à Google Drive</button>
+    </div>`;
+  document.body.appendChild(ov);
+}
+
+function showSetup() {
+  removeOverlay();
+  const origin = window.location.origin;
+  const isFile = origin === 'null' || origin.startsWith('file');
+  const ov = document.createElement('div');
+  ov.id = 'setupOv'; ov.className = 'overlay';
+  ov.innerHTML = `
+    <div class="overlay-card">
+      <div class="overlay-icon">⚙️</div>
+      <div class="overlay-title">Configuration</div>
+      ${isFile ? `
+      <div style="background:#FF3B3022;border:1px solid #FF3B30;border-radius:10px;padding:12px;margin-bottom:16px;font-size:13px;color:#FF3B30;line-height:1.5">
+        ⚠️ Ouvre cette page depuis <strong>GitHub Pages</strong><br>
+        (pas depuis un fichier local).<br>
+        URL : <code style="font-size:11px">https://valc28.github.io/ebanista-app/display.html</code>
+      </div>` : `
+      <div style="background:rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;margin-bottom:16px;font-size:12px;color:rgba(255,255,255,.5);line-height:1.7">
+        Origine à ajouter dans Google Cloud Console :<br>
+        <span style="font-family:monospace;color:#C5972A;font-size:11px">${origin}</span>
+      </div>`}
+      <span class="overlay-label">Client ID OAuth 2.0</span>
+      <input id="setupIn" class="overlay-input" type="text"
+        placeholder="1234…apps.googleusercontent.com" value="${_clientId}">
+      <button class="overlay-btn" ${isFile ? 'disabled style="opacity:.4;cursor:not-allowed"' : `onclick="saveSetup()"`}>Connecter</button>
+    </div>`;
+  document.body.appendChild(ov);
+  setTimeout(() => document.getElementById('setupIn')?.focus(), 100);
+}
+
+function connectDrive() {
+  if (!_client) { showSetup(); return; }
+  _client.requestAccessToken({ prompt: '' });
+}
+
+function saveSetup() {
+  const v = document.getElementById('setupIn')?.value.trim();
+  if (!v) return;
+  _clientId = v;
+  localStorage.setItem('ebanista_gcid', v);
+  removeOverlay();
+  initClient();
+}
+
+// ── init ──
+render();
+</script>
+</body>
+</html>
