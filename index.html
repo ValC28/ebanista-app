@@ -224,16 +224,132 @@
 
     /* ─── Print ─────────────────────────────────────────── */
     @media print {
-      .nav-bar, .tab-bar, .bottom-tabs, .btn-photo, .btn-new, .nav-action, .nav-back,
-      .card-del-btn { display: none !important; }
-      body { background: white; color: black; }
+      body { margin: 0; background: white; color: black; font-family: Arial, sans-serif; }
       #app { display: none !important; }
-      #printAllTabs { display: block !important; }
-      #printAllTabs .screen { overflow: visible; height: auto; }
-      .form-section, .signature-area { box-shadow: none; border: 1px solid #ddd; page-break-inside: avoid; }
-      .form-row { color: black; }
-      .form-label { color: #555; }
-      .form-input { color: black; background: white; border: 1px solid #ccc; }
+      #bonLivraison { display: block !important; }
+    }
+
+    /* ─── Bon de Livraison ───────────────────────────────── */
+    #bonLivraison {
+      display: none;
+      font-family: Arial, sans-serif;
+      font-size: 11pt;
+      color: #111;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 28px 32px;
+    }
+    .bl-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 3px solid #8B6914;
+      padding-bottom: 14px;
+      margin-bottom: 20px;
+    }
+    .bl-logo { font-size: 10pt; line-height: 1.6; }
+    .bl-logo strong { font-size: 15pt; letter-spacing: 1px; color: #8B6914; display: block; }
+    .bl-doc-title { text-align: right; }
+    .bl-doc-title h1 { font-size: 14pt; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+    .bl-doc-title p { font-size: 10pt; color: #555; }
+    .bl-parties {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 18px;
+    }
+    .bl-parties td {
+      width: 50%;
+      vertical-align: top;
+      padding: 12px 14px;
+      border: 1px solid #ccc;
+      font-size: 10pt;
+      line-height: 1.7;
+    }
+    .bl-parties td:first-child { background: #faf7f0; }
+    .bl-parties strong { font-size: 10pt; display: block; margin-bottom: 2px; color: #8B6914; }
+    .bl-section { margin-bottom: 16px; }
+    .bl-section-title {
+      font-size: 10pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: #8B6914;
+      border-bottom: 1px solid #d4b96a;
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+    }
+    .bl-info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px 20px;
+      font-size: 10pt;
+    }
+    .bl-info-row { display: flex; gap: 6px; }
+    .bl-info-label { color: #666; min-width: 120px; flex-shrink: 0; }
+    .bl-check-row { display: flex; align-items: center; gap: 8px; font-size: 10pt; padding: 3px 0; }
+    .bl-check { font-size: 13pt; line-height: 1; }
+    .bl-reserves-box {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      font-size: 10pt;
+      min-height: 50px;
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+    .bl-sans-reserve {
+      background: #f0faf3;
+      border: 1px solid #b2dfbc;
+      border-radius: 4px;
+      padding: 8px 12px;
+      font-size: 10pt;
+      color: #1a7f3c;
+      font-weight: 600;
+    }
+    .bl-declaration {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #fafafa;
+      padding: 12px 14px;
+      font-size: 10pt;
+      line-height: 1.7;
+    }
+    .bl-signatures {
+      display: flex;
+      gap: 20px;
+      margin-top: 20px;
+      page-break-inside: avoid;
+    }
+    .bl-sig-block {
+      flex: 1;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 12px 14px;
+    }
+    .bl-sig-title {
+      font-size: 10pt;
+      font-weight: 700;
+      color: #8B6914;
+      margin-bottom: 6px;
+      border-bottom: 1px solid #e5d8b0;
+      padding-bottom: 4px;
+    }
+    .bl-sig-info { font-size: 9.5pt; margin-bottom: 3px; }
+    .bl-sig-box {
+      border: 1px dashed #aaa;
+      height: 80px;
+      margin-top: 8px;
+      border-radius: 3px;
+    }
+    .bl-sig-label { font-size: 9pt; color: #666; margin-top: 6px; }
+    .bl-footer {
+      margin-top: 20px;
+      border-top: 1px solid #ddd;
+      padding-top: 8px;
+      font-size: 8.5pt;
+      color: #888;
+      text-align: center;
     }
   </style>
 </head>
@@ -548,7 +664,7 @@ function renderProject() {
       <h1>${p.identification.nomProjet || p.identification.codeProjet || 'Nouveau projet'}</h1>
       <div style="display:flex;gap:6px;align-items:center">
         <button class="card-del-btn" onclick="showDeleteModal('${p.id}')" title="Supprimer" style="font-size:20px;padding:4px 6px">🗑️</button>
-        ${state.currentTab === 3 ? `<button class="nav-action" style="background:var(--blue)" onclick="printProject('${p.id}')">PDF</button>` : ''}
+        ${state.currentTab === 3 ? `<button class="nav-action" style="background:var(--blue)" onclick="printProject('${p.id}')">Bon de livraison</button>` : ''}
         <button class="nav-action" onclick="saveAndToast()">Enregistrer</button>
       </div>
     </div>
@@ -1752,35 +1868,122 @@ function showDriveSetup() {
   setTimeout(() => document.getElementById('driveClientInput')?.focus(), 150);
 }
 
-// ═══ EXPORT PDF ═══════════════════════════════════════
+// ═══ EXPORT PDF — BON DE LIVRAISON ═══════════════════
 function printProject(id) {
-  save(); // sauvegarder avant d'imprimer
+  save();
   const p = getProject(id);
   if (!p) return;
 
-  // Titre du document
-  const code   = p.identification.codeProjet || '';
-  const client = p.identification.client || '';
-  document.title = [code, client, 'Bon de livraison'].filter(Boolean).join(' — ');
+  const id_ = p.identification;
+  const ps  = p.pose;
 
-  // Créer une div print-only avec les 4 onglets
-  const prev = document.getElementById('printAllTabs');
+  const code    = id_.codeProjet       || '';
+  const client  = id_.client           || '';
+  const projet  = id_.nomProjet        || code;
+  const adresse = id_.adresseChantier  || '';
+  const respId  = id_.responsablePose  || '';
+
+  const today = new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
+  const fmt = d => d ? new Date(d).toLocaleDateString('fr-FR') : '—';
+
+  const suiviLabels = ['Meubles implantés et fixés','Alignements et niveaux contrôlés','Plans de travail ajustés','Réglages portes / façades effectués','Nettoyage fin de chantier réalisé'];
+
+  // ── Réserves ──
+  const hasReserves = ps.reservesEmises || (ps.reserves || '').trim() || (ps.reservesClient || '').trim();
+  const reservesHTML = hasReserves ? `
+    <div class="bl-reserves-box"><strong>Réserves EBANISTA :</strong><br>${(ps.reserves||'—').replace(/\n/g,'<br>')}</div>
+    <div class="bl-reserves-box"><strong>Réserves client :</strong><br>${(ps.reservesClient||'—').replace(/\n/g,'<br>')}</div>
+    <p style="font-size:9.5pt;color:#555;margin-top:4px">Les réserves mentionnées ci-dessus devront être levées dans un délai à convenir entre les parties.</p>
+  ` : `<div class="bl-sans-reserve">✓ Aucune réserve — travaux réceptionnés conformes</div>`;
+
+  // ── Suivi installation ──
+  const suiviHTML = suiviLabels.map((l, i) =>
+    `<div class="bl-check-row"><span class="bl-check">${ps.suiviInstallation[i] ? '☑' : '☐'}</span> ${l}</div>`
+  ).join('');
+
+  // ── Déclaration ──
+  const clientNom = ps.client2 || '____________________________';
+  const decl = hasReserves
+    ? `Je soussigné(e) <strong>${clientNom}</strong>, représentant(e) du maître d'ouvrage, reconnais avoir réceptionné ce jour les travaux d'installation décrits ci-dessus, réalisés par <strong>EBANISTA</strong>, sous réserve des points mentionnés dans la section « Réserves » ci-dessus.`
+    : `Je soussigné(e) <strong>${clientNom}</strong>, représentant(e) du maître d'ouvrage, reconnais avoir réceptionné ce jour les travaux d'installation décrits ci-dessus, réalisés par <strong>EBANISTA</strong>, <strong>sans réserve</strong>.`;
+
+  const html = `
+  <div class="bl-header">
+    <div class="bl-logo">
+      <strong>EBANISTA</strong>
+      Menuiserie &amp; Ébénisterie sur mesure<br>
+      Valaurie — Drôme
+    </div>
+    <div class="bl-doc-title">
+      <h1>Bon de réception de travaux</h1>
+      <p>Réf. ${code} &nbsp;|&nbsp; ${today}</p>
+    </div>
+  </div>
+
+  <table class="bl-parties">
+    <tr>
+      <td><strong>Entreprise</strong>EBANISTA<br>Menuiserie &amp; Ébénisterie<br>Valaurie, 26230 Drôme</td>
+      <td><strong>Client / Maître d'ouvrage</strong>${client}<br>${adresse}</td>
+    </tr>
+  </table>
+
+  <div class="bl-section">
+    <div class="bl-section-title">Désignation des travaux</div>
+    <div class="bl-info-grid">
+      <div class="bl-info-row"><span class="bl-info-label">Projet :</span><span>${projet}</span></div>
+      <div class="bl-info-row"><span class="bl-info-label">Responsable pose :</span><span>${ps.respPose || respId || '—'}</span></div>
+      <div class="bl-info-row"><span class="bl-info-label">Chantier :</span><span>${adresse || '—'}</span></div>
+      <div class="bl-info-row"><span class="bl-info-label">Date début :</span><span>${fmt(ps.dateDebut)}</span></div>
+      <div class="bl-info-row"><span class="bl-info-label">Équipe :</span><span>${ps.typeEquipe}${ps.nomEntrepriseST ? ' — ' + ps.nomEntrepriseST : ''}</span></div>
+      <div class="bl-info-row"><span class="bl-info-label">Date fin :</span><span>${fmt(ps.dateFin)}</span></div>
+    </div>
+  </div>
+
+  <div class="bl-section">
+    <div class="bl-section-title">Prestations réalisées</div>
+    ${suiviHTML}
+  </div>
+
+  <div class="bl-section">
+    <div class="bl-section-title">Réserves et non-conformités</div>
+    ${reservesHTML}
+  </div>
+
+  <div class="bl-section">
+    <div class="bl-section-title">Déclaration de réception</div>
+    <div class="bl-declaration">${decl}</div>
+  </div>
+
+  <div class="bl-signatures">
+    <div class="bl-sig-block">
+      <div class="bl-sig-title">Responsable pose — EBANISTA</div>
+      <div class="bl-sig-info">Nom : ${ps.respPose || ''}</div>
+      <div class="bl-sig-info">Date : ${ps.respPoseDate ? fmt(ps.respPoseDate) : ''}</div>
+      <div class="bl-sig-label">Signature :</div>
+      <div class="bl-sig-box"></div>
+    </div>
+    <div class="bl-sig-block">
+      <div class="bl-sig-title">Client / Représentant du maître d'ouvrage</div>
+      <div class="bl-sig-info">Nom : ${ps.client2 || ''}</div>
+      <div class="bl-sig-info">Date : ${ps.clientDate ? fmt(ps.clientDate) : ''}</div>
+      <div class="bl-sig-label">Signature et cachet :</div>
+      <div class="bl-sig-box"></div>
+    </div>
+  </div>
+
+  <div class="bl-footer">
+    Document généré par Ebanista Production le ${today} &nbsp;·&nbsp; ${code} &nbsp;·&nbsp; Original à retourner signé à EBANISTA
+  </div>`;
+
+  document.title = [code, client, 'Bon de réception'].filter(Boolean).join(' — ');
+
+  const prev = document.getElementById('bonLivraison');
   if (prev) prev.remove();
   const div = document.createElement('div');
-  div.id = 'printAllTabs';
-  div.style.cssText = 'display:none';
-  div.innerHTML =
-    renderIdentification(p) +
-    '<div style="page-break-before:always"></div>' +
-    renderLancement(p) +
-    '<div style="page-break-before:always"></div>' +
-    renderAtelier(p) +
-    '<div style="page-break-before:always"></div>' +
-    renderPose(p);
+  div.id = 'bonLivraison';
+  div.innerHTML = html;
   document.body.appendChild(div);
 
-  // Afficher pour impression puis masquer
-  div.style.display = 'block';
   const onAfterPrint = () => {
     div.remove();
     document.title = 'Ebanista — Production';

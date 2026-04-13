@@ -1,5 +1,5 @@
-// Service Worker — Ebanista Production v2.7
-const CACHE = 'ebanista-v2.7';
+// Service Worker — Ebanista Production v2.8
+const CACHE = 'ebanista-v2.8';
 // index.html / display.html : network-first (toujours à jour), assets statiques : cache-first
 const NETWORK_FIRST = ['./index.html', './display.html'];
 const ASSETS = ['./manifest.json', './logo.png', './ebanista-core.js'];
