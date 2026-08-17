@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="icon-192.png">
   <title>Ebanista — Production</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="ebanista-core.js"></script>
+  <script src="ebanista-core.js?v=2.10"></script>
   <style>
     /* ─── Reset & Variables ─────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -72,6 +72,7 @@
     .status-1 { background: #FFF3D0; color: #8B6914; }
     .status-2 { background: #D1F0D9; color: #1A7F3C; }
     .status-3 { background: #FFE5D0; color: #C1440E; }
+    .status-4 { background: #F0E6D2; color: #8B6914; }
     .chevron { color: var(--gray); font-size: 18px; }
 
     .empty-state { text-align: center; padding: 60px 20px; }
@@ -86,6 +87,8 @@
     .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
     .tab-badge { font-size: 10px; font-weight: 700; min-width: 17px; height: 17px; border-radius: 9px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center; background: var(--red); color: white; }
     .tab-badge.done { background: var(--green); }
+    .tab-count { font-size: 10px; font-weight: 700; min-width: 17px; height: 17px; border-radius: 9px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center; background: var(--gray2); color: var(--text3); }
+    .dash-tab-bar .tab.active .tab-count { background: var(--accent); color: white; }
 
     /* ─── Form Styles ───────────────────────────────────── */
     .form-section { background: var(--card); border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; box-shadow: var(--shadow); }
@@ -359,24 +362,26 @@
 <!-- Camera input (hidden) -->
 <input type="file" id="cameraInput" accept="image/*" capture="environment" multiple>
 <input type="file" id="galleryInput" accept="image/*" multiple>
+<input type="file" id="importFileInput" accept="application/json,.json">
 
 <script>
 // ═══════════════════════════════════════════════════════
 //  EBANISTA — Production Manager v1.0
 // ═══════════════════════════════════════════════════════
 
-const STATUS_LABELS = ['Nouveau', 'En étude', 'En production', 'Terminé'];
-const STATUS_COLORS = ['status-0', 'status-1', 'status-2', 'status-3'];
-
 let state = {
   screen: 'dashboard',
+  dashboardTab: 0, // onglet actif du dashboard (0-4 → DASH_TABS)
   projects: [],
   deletedIds: {},      // { id: timestamp } — tombstones pour la sync multi-appareils
+  trash: [],            // [{ ...project, deletedAt }] — corbeille récupérable (locale, 30 jours)
   currentProject: null,
   currentTab: 0,
   search: '',
   lastModified: 0,
 };
+
+const TRASH_RETENTION_MS = 30 * 24 * 60 * 60 * 1000; // 30 jours
 
 // ── Persistence ──────────────────────────────────────
 function save() {
@@ -390,6 +395,7 @@ function save() {
     localStorage.setItem('ebanista_v1', JSON.stringify(state.projects));
     localStorage.setItem('ebanista_v1_ts', state.lastModified);
     localStorage.setItem('ebanista_v1_del', JSON.stringify(state.deletedIds));
+    localStorage.setItem('ebanista_v1_trash', JSON.stringify(state.trash));
   } catch(e) {}
   if (_driveClientId && _driveToken) drivePush();
 }
@@ -401,7 +407,64 @@ function load() {
     if (ts) state.lastModified = parseInt(ts);
     const del = localStorage.getItem('ebanista_v1_del');
     if (del) state.deletedIds = JSON.parse(del);
+    const tr = localStorage.getItem('ebanista_v1_trash');
+    if (tr) state.trash = JSON.parse(tr);
+    // Purge auto des éléments de la corbeille plus vieux que 30 jours
+    const now = Date.now();
+    const before = state.trash.length;
+    state.trash = state.trash.filter(t => (now - (t.deletedAt || 0)) < TRASH_RETENTION_MS);
+    if (state.trash.length !== before) {
+      localStorage.setItem('ebanista_v1_trash', JSON.stringify(state.trash));
+    }
   } catch(e) {}
+}
+
+// ─── Export / Import (sauvegarde locale) ──────────────
+let _pendingImport = null;
+
+function exportData() {
+  const payload = {
+    app: 'ebanista', version: 1, exportedAt: Date.now(),
+    projects: state.projects, deletedIds: state.deletedIds, trash: state.trash,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ebanista-sauvegarde-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  document.getElementById('driveSetupOverlay')?.remove();
+  toast('⬇️ Sauvegarde exportée');
+}
+
+function importData(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    let data;
+    try { data = JSON.parse(e.target.result); }
+    catch(err) { toast('Fichier invalide'); return; }
+    if (!data || !Array.isArray(data.projects)) { toast('Format de sauvegarde invalide'); return; }
+    _pendingImport = data;
+    document.getElementById('driveSetupOverlay')?.remove();
+    _showPinModal(
+      '⚠️ Importer une sauvegarde',
+      `Remplace les <strong>${state.projects.length}</strong> projet(s) actuel(s) par les <strong>${data.projects.length}</strong> projet(s) du fichier. Entrez le code PIN pour confirmer.`,
+      () => {
+        state.projects = _pendingImport.projects;
+        state.deletedIds = _pendingImport.deletedIds || {};
+        state.trash = _pendingImport.trash || state.trash;
+        _pendingImport = null;
+        save();
+        state.screen = 'dashboard';
+        render();
+        toast('✓ Sauvegarde importée');
+      }
+    );
+  };
+  reader.readAsText(file);
 }
 
 // ── Helpers ───────────────────────────────────────────
@@ -422,6 +485,8 @@ function newProject() {
     createdAt: Date.now(),
     updatedAt: Date.now(),
     status: 0,
+    archived: false,
+    archivedAt: null,
     // ── Identification ──
     identification: {
       codeProjet: 'EBA-',
@@ -514,19 +579,34 @@ function render() {
     app.innerHTML = renderDashboard();
   } else if (state.screen === 'project') {
     app.innerHTML = renderProject();
+  } else if (state.screen === 'trash') {
+    app.innerHTML = renderTrash();
   }
   attachEvents();
 }
 
 // ─── Dashboard ────────────────────────────────────────
+const DASH_TABS = ['Nouveau','En étude','En production','Prêt à livrer','Clôturé'];
+
+function switchDashboardTab(i) {
+  state.dashboardTab = i;
+  render();
+}
+
 function renderDashboard() {
-  const filtered = state.projects.filter(p => {
-    const q = state.search.toLowerCase();
+  const q = state.search.toLowerCase();
+  const searched = state.projects.filter(p => {
     return !q || (p.identification.codeProjet||'').toLowerCase().includes(q)
               || (p.identification.client||'').toLowerCase().includes(q)
-              || (p.identification.adresseChantier||'').toLowerCase().includes(q);
+              || (p.identification.adresseChantier||'').toLowerCase().includes(q)
+              || (p.identification.responsablePose||'').toLowerCase().includes(q)
+              || (p.identification.chefAtelier||'').toLowerCase().includes(q)
+              || (p.identification.synthese||'').toLowerCase().includes(q);
   });
-  const byStatus = [0,1,2,3].map(s => filtered.filter(p => p.status === s));
+  const byTab = [0,1,2,3,4].map(s => searched.filter(p => getDisplayStatus(p) === s));
+  const currentTab = state.dashboardTab || 0;
+  const filtered = byTab[currentTab];
+  const alertBanner = renderDeliveryAlertBanner(state.projects.filter(p => !p.archived));
 
   let html = `
   <div id="app">
@@ -559,41 +639,43 @@ function renderDashboard() {
         <input type="search" placeholder="Rechercher…" value="${state.search}"
           oninput="state.search=this.value;renderDebounced()">
       </div>
+      ${alertBanner}
+    </div>
+    <div class="tab-bar dash-tab-bar">
+      ${DASH_TABS.map((t,i) => `<div class="tab${i===currentTab?' active':''}" onclick="switchDashboardTab(${i})">${t}<span class="tab-count">${byTab[i].length}</span></div>`).join('')}
+    </div>
+    <div class="screen">
   `;
 
   if (filtered.length === 0) {
     html += `<div class="empty-state">
       <div class="icon"><img src="logo.png" style="width:64px;height:64px;object-fit:contain;opacity:.25"></div>
-      <h3>${state.search ? 'Aucun résultat' : 'Aucun projet'}</h3>
-      <p>${state.search ? 'Modifiez votre recherche' : 'Créez votre premier projet de fabrication'}</p>
+      <h3>${state.search ? 'Aucun résultat' : 'Aucun projet dans « ' + DASH_TABS[currentTab] + ' »'}</h3>
+      <p>${state.search ? 'Modifiez votre recherche' : (currentTab === 0 ? 'Créez votre premier projet de fabrication' : 'Les projets apparaîtront ici automatiquement selon leur avancement')}</p>
     </div>`;
   } else {
-    const statusNames = ['Nouveaux', 'En cours', 'En production', 'Livrés'];
-    for (let s = 0; s < 4; s++) {
-      if (byStatus[s].length === 0) continue;
-      html += `<div class="section-label">${statusNames[s]} (${byStatus[s].length})</div>`;
-      for (const p of byStatus[s]) {
-        const prog = calcProgress(p);
-        html += `
-        <div class="project-card" onclick="openProject('${p.id}')">
-          <div class="project-icon"><img src="logo.png" style="width:32px;height:32px;object-fit:contain;filter:brightness(0) invert(1)"></div>
-          <div class="project-info">
-            <h3>${p.identification.codeProjet || 'Sans code'}${p.identification.nomProjet ? ' — ' + p.identification.nomProjet : ''}</h3>
-            <p>${p.identification.client || 'Client non renseigné'} · ${p.identification.adresseChantier || '—'}</p>
-            <div style="margin-top:6px">
-              <div class="progress-bar-wrap">
-                <div class="progress-bar" style="width:${prog}%;background:${progressColor(prog)}"></div>
-              </div>
-              ${deliveryBadgeHTML(p.identification?.dateLivraison)}
+    for (const p of filtered) {
+      const prog = calcProgress(p);
+      const displayStatus = getDisplayStatus(p);
+      html += `
+      <div class="project-card" onclick="openProject('${p.id}')">
+        <div class="project-icon"><img src="logo.png" style="width:32px;height:32px;object-fit:contain;filter:brightness(0) invert(1)"></div>
+        <div class="project-info">
+          <h3>${p.identification.codeProjet || 'Sans code'}${p.identification.nomProjet ? ' — ' + p.identification.nomProjet : ''}</h3>
+          <p>${p.identification.client || 'Client non renseigné'} · ${p.identification.adresseChantier || '—'}</p>
+          <div style="margin-top:6px">
+            <div class="progress-bar-wrap">
+              <div class="progress-bar" style="width:${prog}%;background:${progressColor(prog)}"></div>
             </div>
+            ${deliveryBadgeHTML(p.identification?.dateLivraison)}
           </div>
-          <div class="project-status">
-            <span class="status-badge ${STATUS_COLORS[p.status]}">${STATUS_LABELS[p.status]}</span>
-            <span class="date-badge">${fmt(p.createdAt)}</span>
-          </div>
-          <button class="card-del-btn" onclick="event.stopPropagation();showDeleteModal('${p.id}')" title="Supprimer">🗑️</button>
-        </div>`;
-      }
+        </div>
+        <div class="project-status">
+          <span class="status-badge status-${displayStatus}">${DASH_TABS[displayStatus]}</span>
+          <span class="date-badge">${fmt(p.archivedAt || p.createdAt)}</span>
+        </div>
+        <button class="card-del-btn" onclick="event.stopPropagation();showDeleteModal('${p.id}')" title="Supprimer">🗑️</button>
+      </div>`;
     }
   }
   html += `</div></div>`;
@@ -618,6 +700,29 @@ function deliveryBadgeHTML(dateStr) {
   else if (days <= 7)  { bg = 'rgba(255,149,0,.12)';           color = 'var(--orange)';  text = days + ' j. ouv.'; }
   else                 { bg = 'rgba(52,199,89,.12)';           color = 'var(--green)';   text = days + ' j. ouv.'; }
   return `<span style="display:inline-block;margin-top:5px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;background:${bg};color:${color}">${text}</span>`;
+}
+
+// ─── Bandeau d'alerte de livraison (proactif) ─────────
+function renderDeliveryAlertBanner(projects) {
+  let late = 0, soon = 0;
+  for (const p of projects) {
+    const d = p.identification?.dateLivraison;
+    if (!d) continue;
+    const days = workingDaysLeft(d);
+    if (days === null) continue;
+    if (days === -1) late++;
+    else if (days <= 3) soon++;
+  }
+  if (late === 0 && soon === 0) return '';
+  const parts = [];
+  if (late > 0) parts.push(`<strong>${late}</strong> projet${late>1?'s':''} en retard`);
+  if (soon > 0) parts.push(`<strong>${soon}</strong> à livrer sous 3 j. ouv.`);
+  const bg = late > 0 ? '#FFE5E3' : '#FFF3D0';
+  const border = late > 0 ? 'var(--red)' : 'var(--orange)';
+  const color = late > 0 ? '#C1291F' : '#8B6914';
+  return `<div style="background:${bg};border-left:3px solid ${border};color:${color};padding:12px 16px;border-radius:8px;font-size:14px;margin-bottom:16px">
+    ⚠ ${parts.join(' · ')}
+  </div>`;
 }
 
 // ─── Project View ─────────────────────────────────────
@@ -657,6 +762,14 @@ function renderProject() {
   else if (state.currentTab === 2) content = renderAtelier(p);
   else if (state.currentTab === 3) content = renderPose(p);
 
+  const displayStatus = getDisplayStatus(p);
+  let closeBtn = '';
+  if (p.archived) {
+    closeBtn = `<button class="nav-action secondary" onclick="reopenProject('${p.id}')">↩ Réouvrir</button>`;
+  } else if (displayStatus === 3) {
+    closeBtn = `<button class="nav-action" style="background:var(--accent)" onclick="closeProject('${p.id}')">✓ Clôturer</button>`;
+  }
+
   return `
   <div id="app">
     <div class="nav-bar">
@@ -665,12 +778,36 @@ function renderProject() {
       <div style="display:flex;gap:6px;align-items:center">
         <button class="card-del-btn" onclick="showDeleteModal('${p.id}')" title="Supprimer" style="font-size:20px;padding:4px 6px">🗑️</button>
         ${state.currentTab === 3 ? `<button class="nav-action" style="background:var(--blue)" onclick="printProject('${p.id}')">Bon de livraison</button>` : ''}
+        ${closeBtn}
         <button class="nav-action" onclick="saveAndToast()">Enregistrer</button>
       </div>
     </div>
     <div class="tab-bar">${tabs}</div>
     <div class="screen">${content}</div>
   </div>`;
+}
+
+// ─── Clôture / Archivage ───────────────────────────────
+function closeProject(id) {
+  const p = getProject(id);
+  if (!p) return;
+  p.archived = true;
+  p.archivedAt = Date.now();
+  save();
+  state.screen = 'dashboard';
+  state.dashboardTab = 4;
+  render();
+  toast('✓ Projet clôturé');
+}
+
+function reopenProject(id) {
+  const p = getProject(id);
+  if (!p) return;
+  p.archived = false;
+  p.archivedAt = null;
+  save();
+  render();
+  toast('↩ Projet réouvert');
 }
 
 // ─── Project header (lecture seule, affiché dans les onglets 1-3) ──
@@ -1159,6 +1296,10 @@ function showDeleteModal(projectId) {
     () => {
       const idToDelete = _pinTarget;
       _pinTarget = null;
+      const deleted = getProject(idToDelete);
+      if (deleted) {
+        state.trash.push(Object.assign({}, deleted, { deletedAt: Date.now() }));
+      }
       state.projects = state.projects.filter(p => p.id !== idToDelete);
       state.deletedIds[idToDelete] = Date.now(); // tombstone : mémorise la suppression
       if (state.screen === 'project' && state.currentProject === idToDelete) {
@@ -1166,7 +1307,7 @@ function showDeleteModal(projectId) {
       }
       save();
       render();
-      toast('Projet supprimé');
+      toast('Projet supprimé — récupérable dans la corbeille (30 j.)');
     }
   );
 }
@@ -1177,6 +1318,64 @@ function showPinForDrive() {
     'Entrez le code à 4 chiffres pour accéder aux paramètres Drive',
     () => showDriveSetup()
   );
+}
+
+// ─── Corbeille (projets supprimés, récupérables 30 j.) ─
+function openTrash() {
+  document.getElementById('driveSetupOverlay')?.remove();
+  state.screen = 'trash';
+  render();
+}
+
+function renderTrash() {
+  const items = [...state.trash].sort((a,b) => b.deletedAt - a.deletedAt);
+  const rows = items.length === 0
+    ? `<div class="empty-state"><div class="icon">🗑️</div><h3>Corbeille vide</h3><p>Les projets supprimés apparaissent ici pendant 30 jours</p></div>`
+    : items.map(p => {
+        const daysLeft = 30 - Math.floor((Date.now() - p.deletedAt) / 86400000);
+        return `
+        <div class="project-card" style="cursor:default">
+          <div class="project-icon"><img src="logo.png" style="width:32px;height:32px;object-fit:contain;filter:brightness(0) invert(1)"></div>
+          <div class="project-info">
+            <h3>${p.identification.codeProjet || 'Sans code'}${p.identification.nomProjet ? ' — ' + p.identification.nomProjet : ''}</h3>
+            <p>${p.identification.client || 'Client non renseigné'} · Supprimé le ${fmt(p.deletedAt)}</p>
+            <p style="color:var(--text3);font-size:12px;margin-top:2px">${daysLeft > 0 ? daysLeft + ' j. restants avant suppression définitive' : 'Sera purgé prochainement'}</p>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+            <button class="nav-action" style="font-size:13px;padding:6px 10px" onclick="restoreProject('${p.id}')">Restaurer</button>
+            <button class="card-del-btn" onclick="purgeTrashItem('${p.id}')" title="Supprimer définitivement">🗑️</button>
+          </div>
+        </div>`;
+      }).join('');
+
+  return `
+  <div id="app">
+    <div class="nav-bar">
+      <button class="nav-back" onclick="state.screen='dashboard';render()">Projets</button>
+      <h1>Corbeille</h1>
+      <div></div>
+    </div>
+    <div class="screen" style="padding-top:16px">${rows}</div>
+  </div>`;
+}
+
+function restoreProject(id) {
+  const i = state.trash.findIndex(p => p.id === id);
+  if (i === -1) return;
+  const [p] = state.trash.splice(i, 1);
+  delete p.deletedAt;
+  state.projects.unshift(p);
+  delete state.deletedIds[id]; // annule le tombstone pour que la sync ne re-supprime pas
+  save();
+  render();
+  toast('✓ Projet restauré');
+}
+
+function purgeTrashItem(id) {
+  state.trash = state.trash.filter(p => p.id !== id);
+  save();
+  render();
+  toast('Supprimé définitivement');
 }
 
 function closePinModal() {
@@ -1442,6 +1641,10 @@ document.getElementById('cameraInput').addEventListener('change', function() {
 });
 document.getElementById('galleryInput').addEventListener('change', function() {
   if (this.files.length) handleFiles(this.files, _currentPhotoTab);
+  this.value = '';
+});
+document.getElementById('importFileInput').addEventListener('change', function() {
+  if (this.files.length) importData(this.files[0]);
   this.value = '';
 });
 
@@ -1860,7 +2063,15 @@ function showDriveSetup() {
           style="flex:2;background:var(--accent);color:white;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:600;cursor:pointer;font-family:var(--font);touch-action:manipulation">Enregistrer</button>
       </div>
       <button onclick="document.getElementById('driveSetupOverlay').remove();showPinSetupOverlay(true)"
-        style="width:100%;background:none;border:1.5px solid var(--gray2);border-radius:10px;padding:11px;font-size:14px;color:var(--text2);cursor:pointer;font-family:var(--font);touch-action:manipulation">🔐 Modifier le code PIN</button>
+        style="width:100%;background:none;border:1.5px solid var(--gray2);border-radius:10px;padding:11px;font-size:14px;color:var(--text2);cursor:pointer;font-family:var(--font);touch-action:manipulation;margin-bottom:10px">🔐 Modifier le code PIN</button>
+      <div style="display:flex;gap:10px;margin-bottom:10px">
+        <button onclick="exportData()"
+          style="flex:1;background:none;border:1.5px solid var(--gray2);border-radius:10px;padding:11px;font-size:13px;color:var(--text2);cursor:pointer;font-family:var(--font);touch-action:manipulation">⬇️ Exporter</button>
+        <button onclick="document.getElementById('importFileInput').click()"
+          style="flex:1;background:none;border:1.5px solid var(--gray2);border-radius:10px;padding:11px;font-size:13px;color:var(--text2);cursor:pointer;font-family:var(--font);touch-action:manipulation">⬆️ Importer</button>
+      </div>
+      <button onclick="openTrash()"
+        style="width:100%;background:none;border:1.5px solid var(--gray2);border-radius:10px;padding:11px;font-size:14px;color:var(--text2);cursor:pointer;font-family:var(--font);touch-action:manipulation">🗑 Corbeille${state.trash.length ? ' (' + state.trash.length + ')' : ''}</button>
     </div>`;
   document.body.appendChild(ov);
   const hint = document.getElementById('driveOriginHint');

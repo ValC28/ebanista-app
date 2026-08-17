@@ -33,6 +33,43 @@ function progressColor(pct) {
 }
 
 /**
+ * Pourcentage d'avancement du sous-dossier "Lancement Production".
+ */
+function launchProgress(p) {
+  if (!p.lancement) return 0;
+  const items = [
+    ...(p.lancement.dossierTech     || []),
+    ...(p.lancement.fichiersProd    || []),
+    ...(p.lancement.matieresFourn   || []),
+    ...(p.lancement.pointsCritiques || []),
+  ];
+  return items.length ? Math.round(items.filter(Boolean).length / items.length * 100) : 0;
+}
+
+/**
+ * Pourcentage d'avancement du contrôle qualité atelier.
+ */
+function atelierProgress(p) {
+  const items = p.atelier?.controleQualite || [];
+  return items.length ? Math.round(items.filter(x => x.done).length / items.length * 100) : 0;
+}
+
+/**
+ * Catégorie d'avancement (0-4) utilisée pour les onglets du dashboard
+ * et les colonnes du tableau de bord atelier :
+ * 0 Nouveau · 1 En étude · 2 En production · 3 Prêt à livrer · 4 Clôturé
+ */
+function getDisplayStatus(p) {
+  if (p.archived) return 4; // Clôturé (fermé manuellement)
+  const lp = launchProgress(p);
+  const ap = atelierProgress(p);
+  if (lp === 0)               return 0; // Nouveau
+  if (lp < 100)                return 1; // En étude
+  if (lp === 100 && ap < 100)  return 2; // En production
+  return 3;                              // Prêt à livrer
+}
+
+/**
  * Retourne le nombre de jours ouvrables (lun–ven) jusqu'à dateStr.
  * Retourne -1 si la date est passée, 0 si c'est aujourd'hui, null si pas de date.
  */

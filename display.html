@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ebanista — Tableau de Bord</title>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="ebanista-core.js"></script>
+  <script src="ebanista-core.js?v=2.10"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -53,10 +53,17 @@
     #date        { font-size: 13px; color: var(--text3); text-align: right; margin-top: 2px;
                    text-transform: capitalize; }
 
+    /* ── Layout ── */
+    .main {
+      display: flex; flex-direction: column;
+      height: calc(100vh - 72px - 3px);
+      overflow: hidden;
+    }
+
     /* ── Board ── */
     .board {
       display: grid; grid-template-columns: repeat(5, 1fr);
-      height: calc(100vh - 72px - 3px);
+      flex: 1.5; min-height: 0;
     }
     .column {
       display: flex; flex-direction: column;
@@ -137,6 +144,60 @@
 
     .empty-col { padding: 30px 16px; text-align: center; color: var(--text3); font-size: 13px; }
 
+    /* ── Calendars (mois + semaine) ── */
+    .calendars {
+      display: flex; flex: 1; min-height: 0;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+    .cal-panel {
+      display: flex; flex-direction: column; overflow: hidden;
+      border-right: 1px solid rgba(255,255,255,.05);
+    }
+    .cal-panel:last-child { border-right: none; }
+    .cal-month { flex: 0 0 380px; }
+    .cal-week  { flex: 1; }
+
+    .cal-header {
+      padding: 10px 18px; flex-shrink: 0;
+      display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+      border-bottom: 2px solid var(--accent);
+    }
+    .cal-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--accent); white-space: nowrap; }
+    .cal-sub   { font-size: 11px; color: var(--text3); white-space: nowrap; }
+
+    /* Month grid */
+    .cal-dow-row { display: grid; grid-template-columns: repeat(7, 1fr); padding: 6px 10px 0; flex-shrink: 0; }
+    .cal-dow { text-align: center; font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; padding-bottom: 4px; }
+    .cal-grid { flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); padding: 6px 10px 10px; gap: 3px; min-height: 0; }
+    .cal-day {
+      border-radius: 6px; background: rgba(255,255,255,.02);
+      padding: 4px 5px; display: flex; flex-direction: column; min-height: 0;
+    }
+    .cal-day.other-month { opacity: .28; }
+    .cal-day.today { background: rgba(197,151,42,.16); box-shadow: inset 0 0 0 1px var(--accent); }
+    .cal-daynum { font-size: 11px; font-weight: 600; color: var(--text2); }
+    .cal-day.today .cal-daynum { color: var(--accent); font-weight: 800; }
+    .cal-dots { display: flex; flex-wrap: wrap; gap: 2px; margin-top: auto; align-items: center; }
+    .cal-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .cal-more { font-size: 8px; color: var(--text3); font-weight: 700; }
+
+    /* Week view */
+    .week-cols { flex: 1; display: flex; min-height: 0; }
+    .week-day { flex: 1; display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,.05); min-height: 0; }
+    .week-day:last-child { border-right: none; }
+    .week-day-header { padding: 8px 6px; text-align: center; flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,.06); }
+    .week-day.today .week-day-header { background: rgba(197,151,42,.12); }
+    .week-dow { font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--text3); }
+    .week-daynum { font-size: 15px; font-weight: 700; }
+    .week-day.today .week-daynum { color: var(--accent); }
+    .week-body { flex: 1; overflow-y: auto; padding: 6px; scrollbar-width: none; }
+    .week-body::-webkit-scrollbar { display: none; }
+    .week-item { background: var(--card2); border-radius: 6px; padding: 6px 8px; margin-bottom: 5px; border-left: 3px solid; }
+    .week-item-ref { font-size: 10px; font-weight: 700; color: var(--accent); }
+    .week-item-name { font-size: 11px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .week-item-client { font-size: 10px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .week-empty { text-align: center; color: var(--text3); font-size: 10px; padding: 16px 4px; }
+
     /* ── Refresh bar ── */
     .refresh-bar { height: 3px; background: rgba(255,255,255,.06); }
     .refresh-fill { height: 100%; background: var(--accent); transition: width 1s linear; }
@@ -189,14 +250,20 @@
     </div>
   </div>
 
-  <div class="board" id="board"></div>
+  <div class="main">
+    <div class="board" id="board"></div>
+    <div class="calendars">
+      <div class="cal-panel cal-month" id="calMonth"></div>
+      <div class="cal-panel cal-week" id="calWeek"></div>
+    </div>
+  </div>
   <div class="refresh-bar"><div class="refresh-fill" id="rfill" style="width:100%"></div></div>
 
 <script>
 // ═══ Config ═══════════════════════════════════════════
 const REFRESH_SEC     = 60;
 const DRIVE_DATA_FILE = 'ebanista-data.json';
-const STATUS_LABELS   = ['Nouveau', 'En étude', 'En production', 'Prêt à livrer', 'Terminé'];
+const STATUS_LABELS   = ['Nouveau', 'En étude', 'En production', 'Prêt à livrer', 'Clôturé'];
 
 let _clientId    = localStorage.getItem('ebanista_gcid') || '';
 let _fileId      = localStorage.getItem('ebanista_dfid') || '';
@@ -217,34 +284,7 @@ function tick() {
 }
 setInterval(tick, 1000); tick();
 
-// ═══ Auto-status ══════════════════════════════════════
-function launchProgress(p) {
-  if (!p.lancement) return 0;
-  const items = [
-    ...(p.lancement.dossierTech    || []),
-    ...(p.lancement.fichiersProd   || []),
-    ...(p.lancement.matieresFourn  || []),
-    ...(p.lancement.pointsCritiques|| [])
-  ];
-  return items.length ? Math.round(items.filter(Boolean).length / items.length * 100) : 0;
-}
-
-function atelierProgress(p) {
-  const items = p.atelier?.controleQualite || [];
-  return items.length ? Math.round(items.filter(x => x.done).length / items.length * 100) : 0;
-}
-
-function getDisplayStatus(p) {
-  if (p.status === 3) return 4; // Terminé (manual)
-  const lp = launchProgress(p);
-  const ap = atelierProgress(p);
-  if (lp === 0)                   return 0; // Nouveau
-  if (lp < 100)                   return 1; // En étude
-  if (lp === 100 && ap < 100)     return 2; // En production
-  return 3;                                  // Prêt à livrer
-}
-
-// calcProgress, progressColor, workingDaysLeft → ebanista-core.js
+// launchProgress, atelierProgress, getDisplayStatus, calcProgress, progressColor, workingDaysLeft → ebanista-core.js
 
 function deliveryHTML(dateStr) {
   if (!dateStr) return '';
@@ -261,6 +301,109 @@ function deliveryHTML(dateStr) {
       <span class="delivery-date">📦 ${dateLabel}</span>
       <span class="delivery-badge ${badgeClass}">${badgeText}</span>
     </div>`;
+}
+
+// ═══ Calendriers (mois + semaine) ═════════════════════
+function ymd(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function deliveryColor(days) {
+  if (days === null)  return 'rgba(255,255,255,.3)';
+  if (days <= 3)       return '#FF3B30'; // en retard, aujourd'hui ou sous 3j
+  if (days <= 7)       return '#FF9500';
+  return '#34C759';
+}
+
+function projectsByDeliveryDate() {
+  const byDate = {};
+  _projects.filter(p => !p.archived && p.identification?.dateLivraison).forEach(p => {
+    const d = p.identification.dateLivraison;
+    (byDate[d] = byDate[d] || []).push(p);
+  });
+  return byDate;
+}
+
+function renderMonthCalendar() {
+  const now = new Date();
+  const todayStr = ymd(now);
+  const year = now.getFullYear(), month = now.getMonth();
+  const monthLabel = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  const byDate = projectsByDeliveryDate();
+
+  const startOffset = (new Date(year, month, 1).getDay() + 6) % 7; // 0 = lundi
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const rows = Math.ceil((startOffset + daysInMonth) / 7);
+  const dowNames = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+
+  let cells = '';
+  for (let i = 0; i < rows * 7; i++) {
+    const d = new Date(year, month, 1 - startOffset + i);
+    const dStr = ymd(d);
+    const items = byDate[dStr] || [];
+    const isToday = dStr === todayStr;
+    const otherMonth = d.getMonth() !== month;
+    const dots = items.slice(0, 4).map(p =>
+      `<span class="cal-dot" style="background:${deliveryColor(workingDaysLeft(dStr))}" title="${p.identification.codeProjet || ''}"></span>`
+    ).join('');
+    const more = items.length > 4 ? `<span class="cal-more">+${items.length - 4}</span>` : '';
+    cells += `<div class="cal-day${isToday ? ' today' : ''}${otherMonth ? ' other-month' : ''}">
+      <div class="cal-daynum">${d.getDate()}</div>
+      <div class="cal-dots">${dots}${more}</div>
+    </div>`;
+  }
+
+  document.getElementById('calMonth').innerHTML = `
+    <div class="cal-header">
+      <span class="cal-title">📅 ${monthLabel}</span>
+    </div>
+    <div class="cal-dow-row">${dowNames.map(n => `<div class="cal-dow">${n}</div>`).join('')}</div>
+    <div class="cal-grid" style="grid-template-rows:repeat(${rows},1fr)">${cells}</div>`;
+}
+
+function renderWeekCalendar() {
+  const now = new Date();
+  const todayStr = ymd(now);
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+  const byDate = projectsByDeliveryDate();
+
+  let cols = '';
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday); d.setDate(monday.getDate() + i);
+    const dStr = ymd(d);
+    const isToday = dStr === todayStr;
+    const items = byDate[dStr] || [];
+    const dow = d.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '');
+    const body = items.length === 0
+      ? `<div class="week-empty">—</div>`
+      : items.map(p => {
+          const ref    = p.identification?.codeProjet || '';
+          const name   = p.identification?.nomProjet  || '';
+          const client = p.identification?.client     || '';
+          const color  = deliveryColor(workingDaysLeft(dStr));
+          return `<div class="week-item" style="border-left-color:${color}">
+            ${ref ? `<div class="week-item-ref">${ref}</div>` : ''}
+            <div class="week-item-name">${name || client || 'Sans nom'}</div>
+            ${client && name ? `<div class="week-item-client">${client}</div>` : ''}
+          </div>`;
+        }).join('');
+    cols += `<div class="week-day${isToday ? ' today' : ''}">
+      <div class="week-day-header">
+        <div class="week-dow">${dow}</div>
+        <div class="week-daynum">${d.getDate()}</div>
+      </div>
+      <div class="week-body">${body}</div>
+    </div>`;
+  }
+
+  document.getElementById('calWeek').innerHTML = `
+    <div class="cal-header">
+      <span class="cal-title">🗓️ Cette semaine</span>
+      <span class="cal-sub">${monday.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} – ${sunday.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+    </div>
+    <div class="week-cols">${cols}</div>`;
 }
 
 // ═══ Render ═══════════════════════════════════════════
@@ -301,6 +444,8 @@ function render() {
         <div class="col-body">${cards}</div>
       </div>`;
   }).join('');
+  renderMonthCalendar();
+  renderWeekCalendar();
 }
 
 // ═══ Drive ════════════════════════════════════════════

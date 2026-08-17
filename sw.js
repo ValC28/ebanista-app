@@ -1,11 +1,16 @@
-// Service Worker — Ebanista Production v2.8
-const CACHE = 'ebanista-v2.8';
+// Service Worker — Ebanista Production v2.10
+const CACHE = 'ebanista-v2.10';
 // index.html / display.html : network-first (toujours à jour), assets statiques : cache-first
 const NETWORK_FIRST = ['./index.html', './display.html'];
-const ASSETS = ['./manifest.json', './logo.png', './ebanista-core.js'];
+const ASSETS = ['./manifest.json', './logo.png', './ebanista-core.js?v=2.10'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll([...NETWORK_FIRST, ...ASSETS])));
+  // cache:'reload' pour ignorer le cache HTTP du navigateur et repartir du réseau
+  e.waitUntil(caches.open(CACHE).then(c =>
+    Promise.all([...NETWORK_FIRST, ...ASSETS].map(url =>
+      fetch(url, { cache: 'reload' }).then(res => c.put(url, res))
+    ))
+  ));
   self.skipWaiting();
 });
 
