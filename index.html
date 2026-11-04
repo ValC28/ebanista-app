@@ -9,90 +9,100 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <title>Ebanista — Production</title>
+  <meta name="theme-color" content="#000000">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Michroma&family=Mukta:wght@300;400;600&family=Raleway:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="ebanista-core.js?v=2.10"></script>
+  <script src="ebanista-core.js?v=2.11"></script>
   <style>
     /* ─── Reset & Variables ─────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg:       #F2F2F7;
-      --card:     #FFFFFF;
-      --primary:  #1C1C1E;
-      --accent:   #8B6914;
-      --accent2:  #C5972A;
-      --green:    #34C759;
-      --red:      #FF3B30;
-      --orange:   #FF9500;
-      --blue:     #007AFF;
-      --gray:     #8E8E93;
-      --gray2:    #E5E5EA;
-      --gray3:    #F2F2F7;
-      --text:     #1C1C1E;
-      --text2:    #3C3C43;
-      --text3:    #8E8E93;
-      --radius:   14px;
-      --shadow:   0 2px 8px rgba(0,0,0,.08);
-      --shadow2:  0 4px 20px rgba(0,0,0,.12);
-      --font:     -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+      color-scheme: dark;
+      --bg:       #000000;
+      --card:     #111111;
+      --primary:  #E5E5E5;
+      --accent:   #575A5F;   /* gris ardoise des boutons du site */
+      --accent2:  #8E8E8E;
+      --green:    #4CC38A;
+      --red:      #FF5A4F;
+      --orange:   #F0A050;
+      --blue:     #7FA8D9;
+      --gray:     #8E8E8E;
+      --gray2:    #2A2A2A;
+      --gray3:    #1A1A1A;
+      --text:     #E5E5E5;
+      --text2:    #BDBDBD;
+      --text3:    #8E8E8E;
+      --radius:   4px;
+      --shadow:   none;
+      --shadow2:  0 4px 20px rgba(0,0,0,.6);
+      --font:       'Raleway', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+      --font-title: 'Michroma', 'Arial Black', Arial, sans-serif;
     }
-    html, body { height: 100%; overflow: hidden; background: var(--bg); font-family: var(--font); color: var(--text); -webkit-tap-highlight-color: transparent; }
+    html, body { height: 100%; overflow: hidden; background: var(--bg); font-family: var(--font); font-weight: 400; color: var(--text); -webkit-tap-highlight-color: transparent; }
 
     /* ─── Layout ────────────────────────────────────────── */
     #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; }
-    .nav-bar { background: rgba(255,255,255,.9); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid var(--gray2); padding: env(safe-area-inset-top, 0) 20px 0; display: flex; align-items: center; justify-content: space-between; min-height: 56px; flex-shrink: 0; z-index: 100; }
-    .nav-bar h1 { font-size: 17px; font-weight: 600; color: var(--text); }
-    .nav-back { color: var(--blue); font-size: 16px; font-weight: 400; background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 8px 0; }
+    .nav-bar { background: #000; border-bottom: 1px solid var(--gray2); padding: env(safe-area-inset-top, 0) 20px 0; display: flex; align-items: center; justify-content: space-between; min-height: 56px; flex-shrink: 0; z-index: 100; }
+    .nav-bar h1 { font-family: var(--font-title); font-size: 10px; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; color: var(--text); flex: 1; min-width: 0; margin: 0 12px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nav-bar svg { filter: grayscale(1) brightness(1.5); }
+    .brand { display: flex; flex-direction: column; line-height: 1.1; }
+    .brand-name { font-family: var(--font-title); font-size: 15px; letter-spacing: .3em; color: #fff; }
+    .brand-sub { font-size: 9px; letter-spacing: .55em; text-transform: uppercase; color: var(--text3); margin-top: 5px; }
+    .nav-back { flex-shrink: 0; color: var(--text2); font-size: 16px; font-weight: 400; background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 8px 0; font-family: var(--font); }
     .nav-back::before { content: '‹'; font-size: 22px; line-height: 1; }
-    .nav-action { background: var(--accent); color: white; border: none; border-radius: 8px; padding: 7px 14px; font-size: 15px; font-weight: 600; cursor: pointer; }
-    .nav-action.secondary { background: var(--gray3); color: var(--blue); }
+    .nav-action { flex-shrink: 0; background: var(--text); color: #000; border: none; border-radius: 3px; padding: 8px 11px; font-family: var(--font); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+    .nav-action.secondary { background: var(--accent); color: #fff; }
 
     .screen { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 16px 16px calc(env(safe-area-inset-bottom, 0) + 16px); }
 
     /* ─── Dashboard ────────────────────────────────────── */
     .dashboard-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-    .dashboard-title { font-size: 28px; font-weight: 700; }
-    .btn-new { background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 10px 18px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .dashboard-title { font-family: var(--font-title); font-size: 18px; font-weight: 400; letter-spacing: .22em; text-transform: uppercase; }
+    .btn-new { background: var(--text); color: #000; border: none; border-radius: 3px; padding: 10px 18px; font-family: var(--font); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 6px; }
     .btn-new::before { content: '+'; font-size: 20px; font-weight: 400; }
 
-    .search-bar { background: var(--gray2); border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+    .search-bar { background: var(--card); border: 1px solid var(--gray2); border-radius: 3px; padding: 10px 14px; display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
     .search-bar input { background: none; border: none; outline: none; flex: 1; font-size: 16px; color: var(--text); }
     .search-bar::before { content: '⌕'; font-size: 18px; color: var(--gray); }
 
     .section-label { font-size: 12px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px; padding-left: 4px; }
 
-    .project-card { background: var(--card); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; box-shadow: var(--shadow); cursor: pointer; display: flex; align-items: center; gap: 12px; transition: transform .1s; }
+    .project-card { background: var(--card); border: 1px solid var(--gray2); border-radius: var(--radius); padding: 16px; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: transform .1s, border-color .15s; }
     .project-card:active { transform: scale(.98); }
-    .project-icon { width: 46px; height: 46px; border-radius: 10px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+    .project-icon { display: none; }
     .project-info { flex: 1; min-width: 0; }
-    .project-info h3 { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .project-info h3 { font-family: var(--font-title); font-size: 11px; font-weight: 400; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .project-info p { font-size: 13px; color: var(--text3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .project-status { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
-    .status-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
-    .status-0 { background: #E5E5EA; color: #8E8E93; }
-    .status-1 { background: #FFF3D0; color: #8B6914; }
-    .status-2 { background: #D1F0D9; color: #1A7F3C; }
-    .status-3 { background: #FFE5D0; color: #C1440E; }
-    .status-4 { background: #F0E6D2; color: #8B6914; }
+    .status-badge { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 2px; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+    .status-0 { background: #1F1F1F; color: #8E8E8E; }
+    .status-1 { background: #2A2314; color: #D2A94A; }
+    .status-2 { background: #12281D; color: #5DC98B; }
+    .status-3 { background: #2C1B12; color: #E5915F; }
+    .status-4 { background: #262626; color: #BDBDBD; }
     .chevron { color: var(--gray); font-size: 18px; }
 
     .empty-state { text-align: center; padding: 60px 20px; }
-    .empty-state .icon { font-size: 56px; margin-bottom: 16px; }
-    .empty-state h3 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+    .empty-state .icon { font-family: var(--font-title); font-size: 15px; letter-spacing: .4em; color: var(--accent); margin-bottom: 18px; }
+    .empty-state h3 { font-family: var(--font-title); font-size: 12px; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 8px; }
     .empty-state p { font-size: 15px; color: var(--text3); }
 
     /* ─── Project View ──────────────────────────────────── */
-    .tab-bar { display: flex; background: var(--card); border-bottom: 1px solid var(--gray2); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-shrink: 0; }
+    .tab-bar { display: flex; background: #000; border-bottom: 1px solid var(--gray2); overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; flex-shrink: 0; }
     .tab-bar::-webkit-scrollbar { display: none; }
-    .tab { padding: 12px 16px; font-size: 13px; font-weight: 500; color: var(--text3); white-space: nowrap; border-bottom: 2px solid transparent; cursor: pointer; transition: all .2s; flex-shrink: 0; display: flex; align-items: center; gap: 6px; }
-    .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+    .tab { padding: 14px 13px; font-family: var(--font-title); font-size: 9px; font-weight: 400; letter-spacing: .1em; text-transform: uppercase; color: var(--text3); white-space: nowrap; border-bottom: 1px solid transparent; cursor: pointer; transition: all .2s; flex-shrink: 0; display: flex; align-items: center; gap: 7px; }
+    .tab.active { color: #fff; border-bottom-color: #fff; }
     .tab-badge { font-size: 10px; font-weight: 700; min-width: 17px; height: 17px; border-radius: 9px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center; background: var(--red); color: white; }
     .tab-badge.done { background: var(--green); }
     .tab-count { font-size: 10px; font-weight: 700; min-width: 17px; height: 17px; border-radius: 9px; padding: 0 4px; display: inline-flex; align-items: center; justify-content: center; background: var(--gray2); color: var(--text3); }
-    .dash-tab-bar .tab.active .tab-count { background: var(--accent); color: white; }
+    .dash-tab-bar .tab.active .tab-count { background: var(--text); color: #000; }
 
     /* ─── Form Styles ───────────────────────────────────── */
-    .form-section { background: var(--card); border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; box-shadow: var(--shadow); }
-    .form-section-title { font-size: 13px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; padding: 14px 16px 0; }
+    .form-section { background: var(--card); border: 1px solid var(--gray2); border-radius: var(--radius); margin-bottom: 16px; overflow: hidden; }
+    .form-section-title { font-family: var(--font-title); font-size: 10px; font-weight: 400; color: var(--text3); text-transform: uppercase; letter-spacing: .18em; padding: 16px 16px 2px; }
     .form-row { padding: 12px 16px; border-bottom: 1px solid var(--gray2); display: flex; align-items: center; gap: 12px; }
     .form-row:last-child { border-bottom: none; }
     .form-label { font-size: 15px; color: var(--text2); flex-shrink: 0; min-width: 120px; }
@@ -103,12 +113,12 @@
     textarea.form-input { resize: none; min-height: 80px; padding: 4px 0; text-align: left; }
     select.form-input { text-align: right; appearance: none; -webkit-appearance: none; }
 
-    .checkbox-row { padding: 12px 16px; border-bottom: 1px solid var(--gray2); display: flex; align-items: center; gap: 12px; cursor: pointer; width: 100%; background: none; border-left: none; border-right: none; border-top: none; text-align: left; font-family: var(--font); font-size: inherit; -webkit-appearance: none; touch-action: manipulation; }
+    .checkbox-row { padding: 13px 16px; border-bottom: 1px solid var(--gray2); display: flex; align-items: center; gap: 12px; cursor: pointer; width: 100%; background: none; border-left: none; border-right: none; border-top: none; text-align: left; font-family: var(--font); font-size: inherit; color: var(--text); -webkit-appearance: none; touch-action: manipulation; }
     .checkbox-row:last-child { border-bottom: none; }
     .checkbox-row:active { background: var(--gray3); }
-    .checkbox { width: 24px; height: 24px; border-radius: 6px; border: 2px solid var(--gray2); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .15s; }
-    .checkbox.checked { background: var(--green); border-color: var(--green); }
-    .checkbox.checked::after { content: '✓'; color: white; font-size: 14px; font-weight: 700; }
+    .checkbox { width: 24px; height: 24px; border-radius: 3px; border: 1.5px solid var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .15s; }
+    .checkbox.checked { background: var(--text); border-color: var(--text); }
+    .checkbox.checked::after { content: '✓'; color: #000; font-size: 14px; font-weight: 700; }
     .checkbox-label { font-size: 15px; color: var(--text); flex: 1; line-height: 1.4; }
     .checkbox-label.checked { color: var(--text3); text-decoration: line-through; }
 
@@ -120,8 +130,8 @@
     .photo-thumb .del { position: absolute; top: 4px; right: 4px; width: 22px; height: 22px; border-radius: 50%; background: rgba(0,0,0,.6); color: white; border: none; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
     .photo-thumb .photo-label { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,.5); color: white; font-size: 10px; padding: 3px 4px; text-align: center; }
     .photo-actions { display: flex; gap: 10px; }
-    .btn-photo { flex: 1; background: var(--blue); color: white; border: none; border-radius: 10px; padding: 12px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .btn-photo.secondary { background: var(--gray2); color: var(--text); }
+    .btn-photo { flex: 1; background: var(--accent); color: #fff; border: none; border-radius: 3px; padding: 12px; font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .btn-photo.secondary { background: var(--gray3); color: var(--text); border: 1px solid var(--gray2); }
     input[type="file"] { display: none; }
 
     /* ─── Status Steps ──────────────────────────────────── */
@@ -161,14 +171,14 @@
     .furniture-list { padding: 0 16px 16px; }
     .furniture-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--gray2); }
     .furniture-item:last-child { border-bottom: none; }
-    .furniture-num { width: 28px; height: 28px; border-radius: 6px; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+    .furniture-num { width: 28px; height: 28px; border-radius: 3px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
     .furniture-input { flex: 1; border: none; outline: none; font-size: 15px; background: none; font-family: var(--font); }
     .furniture-qty { width: 50px; border: none; border-bottom: 1px solid var(--gray2); outline: none; font-size: 14px; text-align: center; background: none; font-family: var(--font); }
-    .furniture-check { width: 24px; height: 24px; border-radius: 6px; border: 2px solid var(--gray2); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .15s; flex-shrink: 0; }
-    .furniture-check.done { background: var(--green); border-color: var(--green); }
-    .furniture-check.done::after { content: '✓'; color: white; font-size: 14px; font-weight: 700; }
+    .furniture-check { width: 24px; height: 24px; border-radius: 3px; border: 1.5px solid var(--accent); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .15s; flex-shrink: 0; }
+    .furniture-check.done { background: var(--text); border-color: var(--text); }
+    .furniture-check.done::after { content: '✓'; color: #000; font-size: 14px; font-weight: 700; }
     .furniture-del { background: none; border: none; color: var(--red); font-size: 20px; cursor: pointer; padding: 0 4px; }
-    .btn-add-row { background: none; border: none; color: var(--blue); font-size: 15px; font-weight: 500; cursor: pointer; padding: 10px 0; display: flex; align-items: center; gap: 6px; }
+    .btn-add-row { background: none; border: none; color: var(--text); font-family: var(--font); font-size: 14px; font-weight: 500; cursor: pointer; padding: 10px 0; display: flex; align-items: center; gap: 6px; }
     .btn-add-row::before { content: '+'; font-size: 18px; }
 
     /* ─── Progress Ring ─────────────────────────────────── */
@@ -182,24 +192,24 @@
 
     /* ─── Modal ─────────────────────────────────────────── */
     .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; display: flex; align-items: flex-end; backdrop-filter: blur(4px); animation: fadeIn .2s; }
-    .modal { background: var(--card); border-radius: 20px 20px 0 0; padding: 20px; padding-bottom: calc(env(safe-area-inset-bottom) + 20px); width: 100%; max-height: 90vh; overflow-y: auto; animation: slideUp .25s; }
+    .modal { background: var(--card); border-top: 1px solid var(--gray2); border-radius: 12px 12px 0 0; padding: 20px; padding-bottom: calc(env(safe-area-inset-bottom) + 20px); width: 100%; max-height: 90vh; overflow-y: auto; animation: slideUp .25s; }
     .modal-handle { width: 36px; height: 4px; background: var(--gray2); border-radius: 2px; margin: 0 auto 20px; }
     .modal h2 { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
 
     /* ─── PIN Modal ──────────────────────────────────────── */
     .pin-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 400; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(6px); animation: fadeIn .2s; }
-    .pin-modal { background: var(--card); border-radius: 20px; padding: 28px 24px 24px; width: 320px; max-width: 90vw; animation: pinPop .2s; text-align: center; }
+    .pin-modal { background: var(--card); border: 1px solid var(--gray2); border-radius: 8px; padding: 28px 24px 24px; width: 320px; max-width: 90vw; animation: pinPop .2s; text-align: center; }
     @keyframes pinPop { from { transform: scale(.9); opacity: 0 } to { transform: scale(1); opacity: 1 } }
-    .pin-modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .pin-modal h3 { font-family: var(--font-title); font-size: 12px; font-weight: 400; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 8px; }
     .pin-modal p { font-size: 14px; color: var(--text3); margin-bottom: 20px; }
     .pin-dots { display: flex; justify-content: center; gap: 14px; margin-bottom: 16px; }
     .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--gray2); background: transparent; transition: background .15s, border-color .15s; }
-    .pin-dot.filled { background: var(--accent); border-color: var(--accent); }
+    .pin-dot.filled { background: var(--text); border-color: var(--text); }
     .pin-dot.error { background: var(--red); border-color: var(--red); }
     .pin-error { font-size: 13px; color: var(--red); margin-bottom: 12px; min-height: 18px; }
     .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .pin-key { background: var(--gray3); border: none; border-radius: 12px; height: 56px; font-size: 22px; font-weight: 500; font-family: var(--font); cursor: pointer; touch-action: manipulation; transition: background .1s; }
-    .pin-key:active { background: var(--gray2); }
+    .pin-key { background: var(--gray3); color: var(--text); border: 1px solid var(--gray2); border-radius: 4px; height: 56px; font-size: 22px; font-weight: 400; font-family: var(--font); cursor: pointer; touch-action: manipulation; transition: background .1s; }
+    .pin-key:active { background: var(--accent); }
     .pin-key.del { font-size: 18px; }
     .pin-key.cancel { background: none; font-size: 15px; color: var(--text3); }
     .pin-modal .del-btn { margin-top: 16px; background: var(--red); color: white; border: none; border-radius: 12px; padding: 14px; width: 100%; font-size: 16px; font-weight: 600; font-family: var(--font); cursor: pointer; touch-action: manipulation; }
@@ -209,7 +219,7 @@
     @keyframes slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }
 
     /* ─── Toast ─────────────────────────────────────────── */
-    .toast { position: fixed; bottom: calc(env(safe-area-inset-bottom) + 90px); left: 50%; transform: translateX(-50%); background: rgba(30,30,32,.9); color: white; padding: 10px 18px; border-radius: 20px; font-size: 14px; font-weight: 500; z-index: 300; animation: toastIn .3s; backdrop-filter: blur(10px); white-space: nowrap; }
+    .toast { position: fixed; bottom: calc(env(safe-area-inset-bottom) + 90px); left: 50%; transform: translateX(-50%); background: var(--text); color: #000; padding: 10px 18px; border-radius: 3px; font-size: 13px; font-weight: 600; letter-spacing: .04em; z-index: 300; animation: toastIn .3s; white-space: nowrap; }
     @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(10px) } to { opacity: 1; transform: translateX(-50%) translateY(0) } }
 
     /* ─── Bottom Tab Bar ────────────────────────────────── */
@@ -222,7 +232,7 @@
     /* ─── Misc ──────────────────────────────────────────── */
     .divider { height: 1px; background: var(--gray2); margin: 8px 0; }
     .date-badge { font-size: 12px; color: var(--text3); }
-    .info-banner { background: #FFF8E1; border-left: 3px solid var(--accent2); padding: 12px 16px; border-radius: 8px; font-size: 14px; margin-bottom: 16px; }
+    .info-banner { background: var(--card); border-left: 3px solid var(--accent2); padding: 12px 16px; border-radius: 4px; font-size: 14px; margin-bottom: 16px; }
     .badge-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 
     /* ─── Print ─────────────────────────────────────────── */
@@ -235,7 +245,8 @@
     /* ─── Bon de Livraison ───────────────────────────────── */
     #bonLivraison {
       display: none;
-      font-family: Arial, sans-serif;
+      font-family: 'Mukta', Arial, sans-serif;
+      font-weight: 300;
       font-size: 11pt;
       color: #111;
       max-width: 800px;
@@ -246,14 +257,14 @@
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      border-bottom: 3px solid #8B6914;
+      border-bottom: 1px solid #111;
       padding-bottom: 14px;
       margin-bottom: 20px;
     }
     .bl-logo { font-size: 10pt; line-height: 1.6; }
-    .bl-logo strong { font-size: 15pt; letter-spacing: 1px; color: #8B6914; display: block; }
+    .bl-logo strong { font-family: 'Michroma', Arial, sans-serif; font-weight: 400; font-size: 13pt; letter-spacing: .3em; color: #111; display: block; }
     .bl-doc-title { text-align: right; }
-    .bl-doc-title h1 { font-size: 14pt; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+    .bl-doc-title h1 { font-family: 'Michroma', Arial, sans-serif; font-size: 10pt; font-weight: 400; text-transform: uppercase; letter-spacing: .16em; margin-bottom: 4px; }
     .bl-doc-title p { font-size: 10pt; color: #555; }
     .bl-parties {
       width: 100%;
@@ -268,16 +279,16 @@
       font-size: 10pt;
       line-height: 1.7;
     }
-    .bl-parties td:first-child { background: #faf7f0; }
-    .bl-parties strong { font-size: 10pt; display: block; margin-bottom: 2px; color: #8B6914; }
+    .bl-parties td:first-child { background: #f7f7f7; }
+    .bl-parties strong { font-size: 10pt; display: block; margin-bottom: 2px; color: #111; }
     .bl-section { margin-bottom: 16px; }
     .bl-section-title {
       font-size: 10pt;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: .5px;
-      color: #8B6914;
-      border-bottom: 1px solid #d4b96a;
+      color: #111;
+      border-bottom: 1px solid #bbb;
       padding-bottom: 4px;
       margin-bottom: 8px;
     }
@@ -302,12 +313,12 @@
       line-height: 1.5;
     }
     .bl-sans-reserve {
-      background: #f0faf3;
-      border: 1px solid #b2dfbc;
+      background: #f7f7f7;
+      border: 1px solid #ccc;
       border-radius: 4px;
       padding: 8px 12px;
       font-size: 10pt;
-      color: #1a7f3c;
+      color: #111;
       font-weight: 600;
     }
     .bl-declaration {
@@ -333,9 +344,9 @@
     .bl-sig-title {
       font-size: 10pt;
       font-weight: 700;
-      color: #8B6914;
+      color: #111;
       margin-bottom: 6px;
-      border-bottom: 1px solid #e5d8b0;
+      border-bottom: 1px solid #ccc;
       padding-bottom: 4px;
     }
     .bl-sig-info { font-size: 9.5pt; margin-bottom: 3px; }
@@ -403,6 +414,7 @@ function load() {
   try {
     const d = localStorage.getItem('ebanista_v1');
     if (d) state.projects = JSON.parse(d);
+    state.projects.forEach(ensureJalons);
     const ts = localStorage.getItem('ebanista_v1_ts');
     if (ts) state.lastModified = parseInt(ts);
     const del = localStorage.getItem('ebanista_v1_del');
@@ -437,7 +449,7 @@ function exportData() {
   a.remove();
   URL.revokeObjectURL(url);
   document.getElementById('driveSetupOverlay')?.remove();
-  toast('⬇️ Sauvegarde exportée');
+  toast('Sauvegarde exportée');
 }
 
 function importData(file) {
@@ -454,6 +466,7 @@ function importData(file) {
       `Remplace les <strong>${state.projects.length}</strong> projet(s) actuel(s) par les <strong>${data.projects.length}</strong> projet(s) du fichier. Entrez le code PIN pour confirmer.`,
       () => {
         state.projects = _pendingImport.projects;
+        state.projects.forEach(ensureJalons);
         state.deletedIds = _pendingImport.deletedIds || {};
         state.trash = _pendingImport.trash || state.trash;
         _pendingImport = null;
@@ -489,9 +502,9 @@ function newProject() {
     archivedAt: null,
     // ── Identification ──
     identification: {
-      codeProjet: 'EBA-',
+      codeProjet: '',
+      codeLegacy: '',
       nomProjet: '',
-      driveFolder: null,
       client: '',
       adresseChantier: '',
       dateOuverture: '',
@@ -521,12 +534,14 @@ function newProject() {
       pointsCritiques: [false,false,false,false,false],
       observations: '',
       receptionSemaine: '',
+      dateReception: '',
       respBE: '', respBEDate: '',
       respProd: '', respProdDate: '',
     },
     // ── Contrôle Atelier ──
     atelier: {
       dateControle: '',
+      dateDebut: '', dateFin: '',
       meubles: [],
       quincaillerie: [
         { label:'Poignées', done:false },
@@ -562,6 +577,12 @@ function newProject() {
       respPose: '', respPoseDate: '',
       client2: '', clientDate: '',
     },
+    // ── Jalons de suivi (remplacent les listes de cases à cocher) ──
+    jalons: {
+      plans:false, cnc:false, matieresCommandees:false,
+      matieresRecues:false, fabrique:false, controle:false,
+      docsTransmis:false, posee:false, reservesLevees:false,
+    },
     // ── Photos ──
     photos: {
       identification: [],
@@ -596,7 +617,8 @@ function switchDashboardTab(i) {
 function renderDashboard() {
   const q = state.search.toLowerCase();
   const searched = state.projects.filter(p => {
-    return !q || (p.identification.codeProjet||'').toLowerCase().includes(q)
+    return !q || projectRef(p).toLowerCase().includes(q)
+              || (p.identification.codeLegacy||'').toLowerCase().includes(q)
               || (p.identification.client||'').toLowerCase().includes(q)
               || (p.identification.adresseChantier||'').toLowerCase().includes(q)
               || (p.identification.responsablePose||'').toLowerCase().includes(q)
@@ -611,12 +633,7 @@ function renderDashboard() {
   let html = `
   <div id="app">
     <div class="nav-bar">
-      <div style="display:flex;align-items:center;gap:10px">
-        <div style="width:36px;height:36px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;padding:5px">
-          <img src="logo.png" style="width:100%;height:100%;object-fit:contain;filter:brightness(0) invert(1)">
-        </div>
-        <h1>Ebanista Production</h1>
-      </div>
+      <div class="brand"><span class="brand-name">EBANISTA</span><span class="brand-sub">Agencement</span></div>
       <div style="position:relative;display:inline-flex">
         <button onclick="showPinForDrive()" style="background:none;border:none;cursor:pointer;padding:4px;touch-action:manipulation;opacity:${_driveClientId?'1':'.45'}" title="Google Drive">
           <svg width="22" height="22" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg"><path d="M6.6 66.85l3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8H0c0 1.55.4 3.1 1.2 4.5z" fill="#0066DA"/><path d="M43.65 25L29.9 1.2C28.55 2 27.4 3.1 26.6 4.5L1.2 48.55C.4 49.95 0 51.5 0 53.05h27.5z" fill="#00AC47"/><path d="M73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5H59.8l7.75 20.8z" fill="#EA4335"/><path d="M43.65 25L57.4 1.2C56.05.4 54.5 0 52.9 0H34.4c-1.6 0-3.15.45-4.5 1.2z" fill="#00832D"/><path d="M59.8 53.05H27.5L13.75 76.85c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684FC"/><path d="M73.4 26.5l-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3L43.65 25l16.15 28.05H87.3c0-1.55-.4-3.1-1.2-4.5z" fill="#FFBA00"/></svg>
@@ -624,7 +641,7 @@ function renderDashboard() {
         ${_driveClientId ? `<div id="syncDot" style="position:absolute;top:2px;right:2px;width:9px;height:9px;border-radius:50%;background:${{idle:'#8E8E93',syncing:'#FF9500',ok:'#34C759',error:'#FF3B30'}[_syncStatus]||'#8E8E93'};border:2px solid var(--card);pointer-events:none"></div>` : ''}
       </div>
     </div>
-    <div class="screen" style="padding-top:16px">
+    <div class="screen" style="padding-top:16px;flex:none">
       <div class="dashboard-header">
         <div class="dashboard-title">Projets</div>
         <div style="display:flex;gap:8px;align-items:center">
@@ -649,7 +666,7 @@ function renderDashboard() {
 
   if (filtered.length === 0) {
     html += `<div class="empty-state">
-      <div class="icon"><img src="logo.png" style="width:64px;height:64px;object-fit:contain;opacity:.25"></div>
+      <div class="icon">EBANISTA</div>
       <h3>${state.search ? 'Aucun résultat' : 'Aucun projet dans « ' + DASH_TABS[currentTab] + ' »'}</h3>
       <p>${state.search ? 'Modifiez votre recherche' : (currentTab === 0 ? 'Créez votre premier projet de fabrication' : 'Les projets apparaîtront ici automatiquement selon leur avancement')}</p>
     </div>`;
@@ -659,9 +676,8 @@ function renderDashboard() {
       const displayStatus = getDisplayStatus(p);
       html += `
       <div class="project-card" onclick="openProject('${p.id}')">
-        <div class="project-icon"><img src="logo.png" style="width:32px;height:32px;object-fit:contain;filter:brightness(0) invert(1)"></div>
         <div class="project-info">
-          <h3>${p.identification.codeProjet || 'Sans code'}${p.identification.nomProjet ? ' — ' + p.identification.nomProjet : ''}</h3>
+          <h3>${projectRef(p) || 'Sans référence'}${p.identification.nomProjet ? ' — ' + p.identification.nomProjet : ''}</h3>
           <p>${p.identification.client || 'Client non renseigné'} · ${p.identification.adresseChantier || '—'}</p>
           <div style="margin-top:6px">
             <div class="progress-bar-wrap">
@@ -674,7 +690,7 @@ function renderDashboard() {
           <span class="status-badge status-${displayStatus}">${DASH_TABS[displayStatus]}</span>
           <span class="date-badge">${fmt(p.archivedAt || p.createdAt)}</span>
         </div>
-        <button class="card-del-btn" onclick="event.stopPropagation();showDeleteModal('${p.id}')" title="Supprimer">🗑️</button>
+        <button class="card-del-btn" onclick="event.stopPropagation();showDeleteModal('${p.id}')" title="Supprimer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5"/></svg></button>
       </div>`;
     }
   }
@@ -719,27 +735,18 @@ function renderDeliveryAlertBanner(projects) {
   if (soon > 0) parts.push(`<strong>${soon}</strong> à livrer sous 3 j. ouv.`);
   const bg = late > 0 ? '#FFE5E3' : '#FFF3D0';
   const border = late > 0 ? 'var(--red)' : 'var(--orange)';
-  const color = late > 0 ? '#C1291F' : '#8B6914';
+  const color = late > 0 ? '#C1291F' : '#111';
   return `<div style="background:${bg};border-left:3px solid ${border};color:${color};padding:12px 16px;border-radius:8px;font-size:14px;margin-bottom:16px">
     ⚠ ${parts.join(' · ')}
   </div>`;
 }
 
 // ─── Project View ─────────────────────────────────────
-const TABS = ['Identification','Lancement Prod.','Contrôle Atelier','Dossier de Pose'];
+const TABS = ['Projet','Lancement','Atelier','Pose'];
 
 function tabProgress(p, i) {
-  const addArr = (arr, s) => { s.total += arr.length; s.done += arr.filter(Boolean).length; };
-  const addObj = (arr, s) => { s.total += arr.length; s.done += arr.filter(x=>x.done).length; };
-  const s = { done: 0, total: 0 };
-  if (i === 1) {
-    addArr([...p.lancement.dossierTech,...p.lancement.fichiersProd,...p.lancement.matieresFourn,...p.lancement.pointsCritiques], s);
-  } else if (i === 2) {
-    addObj(p.atelier.controleQualite, s);
-  } else if (i === 3) {
-    addArr([...p.pose.documentsTransmis,...p.pose.verificationsAvant,...p.pose.suiviInstallation], s);
-  }
-  return s;
+  const group = [null, 'lancement', 'atelier', 'pose'][i];
+  return group ? _groupProgress(p, group) : { done: 0, total: 0 };
 }
 
 function renderProject() {
@@ -767,17 +774,17 @@ function renderProject() {
   if (p.archived) {
     closeBtn = `<button class="nav-action secondary" onclick="reopenProject('${p.id}')">↩ Réouvrir</button>`;
   } else if (displayStatus === 3) {
-    closeBtn = `<button class="nav-action" style="background:var(--accent)" onclick="closeProject('${p.id}')">✓ Clôturer</button>`;
+    closeBtn = `<button class="nav-action" style="background:var(--accent);color:#fff" onclick="closeProject('${p.id}')">✓ Clôturer</button>`;
   }
 
   return `
   <div id="app">
     <div class="nav-bar">
       <button class="nav-back" onclick="goBack()">Projets</button>
-      <h1>${p.identification.nomProjet || p.identification.codeProjet || 'Nouveau projet'}</h1>
+      <h1>${p.identification.nomProjet || projectRef(p) || 'Nouveau projet'}</h1>
       <div style="display:flex;gap:6px;align-items:center">
-        <button class="card-del-btn" onclick="showDeleteModal('${p.id}')" title="Supprimer" style="font-size:20px;padding:4px 6px">🗑️</button>
-        ${state.currentTab === 3 ? `<button class="nav-action" style="background:var(--blue)" onclick="printProject('${p.id}')">Bon de livraison</button>` : ''}
+        <button class="card-del-btn" onclick="showDeleteModal('${p.id}')" title="Supprimer" style="padding:4px 6px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5"/></svg></button>
+        ${state.currentTab === 3 ? `<button class="nav-action" style="background:var(--accent);color:#fff" onclick="printProject('${p.id}')">Bon de livraison</button>` : ''}
         ${closeBtn}
         <button class="nav-action" onclick="saveAndToast()">Enregistrer</button>
       </div>
@@ -813,151 +820,110 @@ function reopenProject(id) {
 // ─── Project header (lecture seule, affiché dans les onglets 1-3) ──
 function renderProjectHeader(p) {
   const id = p.identification;
-  const code = id.codeProjet || '—';
+  const code = projectRef(p) || '—';
   const client = id.client || 'Client non renseigné';
   const adresse = id.adresseChantier || '—';
   const livraison = id.dateLivraison ? new Date(id.dateLivraison).toLocaleDateString('fr-FR') : '—';
   const nom = id.nomProjet || '';
-  return `<div style="background:var(--accent);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;color:white;">
-    <div style="font-size:18px;font-weight:700;margin-bottom:2px">${code}</div>
+  return `<div style="background:var(--card);border:1px solid var(--gray2);border-radius:var(--radius);padding:16px;margin-bottom:16px;color:var(--text);">
+    <div style="font-family:var(--font-title);font-size:14px;font-weight:400;letter-spacing:.16em;margin-bottom:8px">${code}</div>
     ${nom ? `<div style="font-size:15px;font-weight:600;opacity:.95;margin-bottom:4px">${nom}</div>` : ''}
     <div style="font-size:14px;opacity:.9;margin-bottom:2px">${client}</div>
     <div style="font-size:13px;opacity:.75;margin-bottom:6px">${adresse}</div>
     <div style="display:flex;gap:16px;font-size:12px;opacity:.85">
-      <span>📦 Livraison : ${livraison}</span>
-      ${id.responsablePose ? `<span>👷 ${id.responsablePose}</span>` : ''}
-      ${id.chefAtelier ? `<span>🏭 ${id.chefAtelier}</span>` : ''}
+      <span>Livraison : ${livraison}</span>
+      ${id.responsablePose ? `<span>Pose : ${id.responsablePose}</span>` : ''}
+      ${id.chefAtelier ? `<span>Atelier : ${id.chefAtelier}</span>` : ''}
     </div>
   </div>`;
 }
 
-// ─── Tab 0: Identification ─────────────────────────────
+// ─── Tab 0: Projet ─────────────────────────────────────
 function renderIdentification(p) {
   const id = p.identification;
-  const statutLabels = ['1. Étude commerciale validée','2. Dossier BE finalisé (Gel technique)','3. En production atelier','4. Contrôle qualité validé','5. En pose / Installation','6. Projet clôturé & archivé'];
-  const docLabels = ['Devis signé + acompte reçu','Plans techniques validés client','Autorisation lancement production signée','Ordre de fabrication édité','Contrôle qualité atelier signé','Bon de livraison édité','PV réception client signé','Archivage numérique complet effectué'];
+  const isCL = /^CL-/.test(id.codeProjet || '');
+  const legacy = id.codeLegacy || ((id.codeProjet && id.codeProjet !== 'EBA-' && !isCL) ? id.codeProjet : '');
+  const legacyTxt = String(legacy).replace(/</g, '&lt;');
 
   return `
   <div class="form-section">
-    <div class="form-section-title">Identification du projet</div>
+    <div class="form-section-title">Projet</div>
     <div class="form-row">
-      <span class="form-label">Code projet</span>
+      <span class="form-label">Référence</span>
       <div style="display:flex;align-items:center;gap:4px;margin-left:auto">
-        <span style="font-size:15px;font-weight:600;color:var(--accent)">EBA-</span>
-        <input class="form-input" type="text" style="text-align:left;max-width:140px"
-          placeholder="____-____"
-          value="${(id.codeProjet||'EBA-').replace(/^EBA-/,'')}"
-          oninput="onCodeProjetInput(this)">
+        <span style="font-size:15px;font-weight:600;color:var(--text)">CL-</span>
+        <input class="form-input" type="text" inputmode="numeric" maxlength="4" style="text-align:left;max-width:90px"
+          placeholder="0007" value="${isCL ? id.codeProjet.slice(3) : ''}"
+          oninput="onCodeProjetInput(this)" onchange="onCodeProjetChange(this)">
       </div>
     </div>
+    ${legacy && !isCL ? `<div style="padding:0 16px 12px;font-size:13px;color:var(--orange)">Ancienne référence : ${legacyTxt} — saisir la référence CL du Drive</div>` : ''}
     ${field('nomProjet','Nom du projet','Ex: Cuisine Dupont','identification')}
     ${field('client','Client','Nom du client','identification')}
     ${field('adresseChantier','Adresse chantier','Adresse complète','identification',true)}
-    ${dateField('dateOuverture','Date ouverture','identification')}
-    ${dateField('dateLivraison','Date livraison prévue','identification')}
-    ${field('commercial','Commercial','Nom','identification')}
-    ${field('dessinateurBE','Dessinateur BE','Nom','identification')}
-    ${field('chefAtelier',"Chef d'atelier",'Nom','identification')}
-    ${field('responsablePose','Responsable pose','Nom','identification')}
+    ${dateField('dateLivraison','Livraison prévue','identification')}
+    ${field('responsablePose','Resp. pose','Nom','identification')}
   </div>
 
   <div class="form-section">
-    <div class="form-section-title">Synthèse risques / Points sensibles</div>
+    <div class="form-section-title">Notes / points sensibles</div>
     <div class="form-row">
       <textarea class="form-input full" rows="5" placeholder="Notes, risques, points d'attention…"
         oninput="setField('identification','synthese',this.value)">${id.synthese||''}</textarea>
     </div>
   </div>
 
-  ${renderSignatureBlock('Validation direction',
-    [{k:'validationLancement',label:'Validation lancement production',dateK:'validationDate'},{k:'validationPose',label:'Validation mise en pose',dateK:'validationDate'}],
-    'identification')}
-
   ${renderPhotoSection('identification', p)}
-
-  ${renderDriveSection(p)}
 
   `;
 }
 
-// ─── Tab 1: Lancement Production ──────────────────────
+// ─── Jalons (cases à cocher réduites à l'essentiel) ───
+function jalonSection(title, group, p) {
+  const j = getJalons(p);
+  return `<div class="form-section">
+    <div class="form-section-title">${title}</div>
+    ${JALONS[group].map(x => checkRow(x.label, j[x.k], `toggleJalon('${x.k}')`)).join('')}
+  </div>`;
+}
+
+function jalonValidation(group, label, p) {
+  const s = _groupProgress(p, group);
+  return `<div id="tabValidation" data-group="${group}" data-label="${label}">${renderTabValidation(label, s.done, s.total, p)}</div>`;
+}
+
+// ─── Tab 1: Lancement ──────────────────────────────────
 function renderLancement(p) {
   const l = p.lancement;
-  const dossierLabels = ['Plans d\'ensemble validés client','Plans techniques cotés complets','Coupes / détails techniques inclus','Plans de travail + découpes validés','PDF dossier complet archivé'];
-  const fichierLabels = ['Fichiers générés','Contrôle sens de fil / veinage','Vérification sens ouverture','Programmes spécifiques intégrés','Export étiquettes pièces validé','Simulation usinage effectuée'];
-  const matLabels = ['Liste panneaux / épaisseurs validée','Finitions confirmées','Placage / stratifié spécifique identifié','Quantitatif matière vérifié','Commandes fournisseurs confirmées (délais confirmés)'];
-  const critiqueLabels = ['Contraintes dimensionnelles hors standard','Contraintes murs non d\'équerre','Ajustements sur site prévus','Produits techniques spécifiques','Coordination autres corps d\'état requise'];
-
   return `
   ${renderProjectHeader(p)}
 
-  <div class="form-section">
-    <div class="form-section-title">Responsabilités (RACI)</div>
-    <div class="raci-table-wrap">
-      <table class="raci-table">
-        <thead><tr><th>Tâche</th><th>Vérifie</th><th>Valide</th><th>Informe</th><th>Prépare</th></tr></thead>
-        <tbody>
-          ${l.raci.map((r,i) => `<tr>
-            <td><strong style="font-size:12px">${r.tache}</strong></td>
-            <td><input value="${r.verifie||''}" oninput="setRaci(${i},'verifie',this.value)" placeholder="—"></td>
-            <td><input value="${r.valide||''}" oninput="setRaci(${i},'valide',this.value)" placeholder="—"></td>
-            <td><input value="${r.informe||''}" oninput="setRaci(${i},'informe',this.value)" placeholder="—"></td>
-            <td><input value="${r.prepare||''}" oninput="setRaci(${i},'prepare',this.value)" placeholder="—"></td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>
-  </div>
+  ${jalonSection('Avancement du lancement', 'lancement', p)}
 
   <div class="form-section">
-    <div class="form-section-title">Dossier technique validé</div>
-    ${dossierLabels.map((l2,i) => checkRow(l2, l.dossierTech[i], `toggleCheck('lancement','dossierTech',${i})`)).join('')}
-  </div>
-
-  <div class="form-section">
-    <div class="form-section-title">Fichiers production / CNC</div>
-    ${fichierLabels.map((l2,i) => checkRow(l2, l.fichiersProd[i], `toggleCheck('lancement','fichiersProd',${i})`)).join('')}
-  </div>
-
-  <div class="form-section">
-    <div class="form-section-title">Matières &amp; fournitures</div>
-    ${matLabels.map((l2,i) => checkRow(l2, l.matieresFourn[i], `toggleCheck('lancement','matieresFourn',${i})`)).join('')}
+    <div class="form-section-title">Matières &amp; observations</div>
+    ${dateField('dateReception','Réception matières prévue','lancement')}
     <div class="form-row">
-      <span class="form-label">Réception semaine</span>
-      <input class="form-input" type="text" placeholder="S. __" value="${l.receptionSemaine||''}"
-        oninput="setField('lancement','receptionSemaine',this.value)">
-    </div>
-  </div>
-
-  <div class="form-section">
-    <div class="form-section-title">Points critiques &amp; analyse de risques</div>
-    ${critiqueLabels.map((l2,i) => checkRow(l2, l.pointsCritiques[i], `toggleCheck('lancement','pointsCritiques',${i})`)).join('')}
-    <div class="form-row">
-      <textarea class="form-input full" rows="4" placeholder="Observations techniques / Points sensibles…"
+      <textarea class="form-input full" rows="4" placeholder="Observations techniques / points sensibles…"
         oninput="setField('lancement','observations',this.value)">${l.observations||''}</textarea>
     </div>
   </div>
 
-  <div class="signature-area">
-    <div class="signature-title">Autorisation de mise en production</div>
-    ${sigField('Responsable BE','respBE','respBEDate','lancement')}
-    ${sigField('Responsable Production','respProd','respProdDate','lancement')}
-  </div>
+  ${renderPhotoSection('lancement', p)}
 
-  ${renderPhotoSection('lancement', getProject(state.currentProject))}
-
-  ${(() => { const done = [...l.dossierTech,...l.fichiersProd,...l.matieresFourn,...l.pointsCritiques].filter(Boolean).length; const total = l.dossierTech.length+l.fichiersProd.length+l.matieresFourn.length+l.pointsCritiques.length; return renderTabValidation('Lancement Production', done, total, p); })()}`;
+  ${jalonValidation('lancement', 'Lancement', p)}`;
 }
 
-// ─── Tab 2: Contrôle Atelier ───────────────────────────
+// ─── Tab 2: Atelier ────────────────────────────────────
 function renderAtelier(p) {
   const a = p.atelier;
   return `
   ${renderProjectHeader(p)}
 
   <div class="form-section">
-    <div class="form-section-title">Informations contrôle</div>
-    ${dateField('dateControle','Date contrôle','atelier')}
+    <div class="form-section-title">Planning fabrication</div>
+    ${dateField('dateDebut','Début fabrication','atelier')}
+    ${dateField('dateFin','Fin fabrication prévue','atelier')}
   </div>
 
   <div class="form-section">
@@ -970,32 +936,19 @@ function renderAtelier(p) {
     </div>
   </div>
 
-  <div class="form-section">
-    <div class="form-section-title">Quincaillerie &amp; accessoires</div>
-    ${a.quincaillerie.map((q,i) => checkRow(q.label, q.done, `toggleQuinc(${i})`)).join('')}
-  </div>
+  ${jalonSection('Avancement atelier', 'atelier', p)}
 
   <div class="form-section">
-    <div class="form-section-title">Contrôle qualité &amp; expédition</div>
-    ${a.controleQualite.map((c,i) => checkRow(c.label, c.done, `toggleCtrl(${i})`)).join('')}
-  </div>
-
-  <div class="form-section">
-    <div class="form-section-title">Observations / Réserves atelier</div>
+    <div class="form-section-title">Observations / réserves atelier</div>
     <div class="form-row">
       <textarea class="form-input full" rows="4" placeholder="Observations, réserves, non-conformités…"
         oninput="setField('atelier','observations',this.value)">${a.observations||''}</textarea>
     </div>
   </div>
 
-  <div class="signature-area">
-    <div class="signature-title">Validation avant départ chantier</div>
-    ${sigField('Nom validateur','nomValidateur','dateValidation','atelier')}
-  </div>
-
   ${renderPhotoSection('atelier', p)}
 
-  ${renderTabValidation('Contrôle Atelier', a.controleQualite.filter(x=>x.done).length, a.controleQualite.length, p)}`;
+  ${jalonValidation('atelier', 'Atelier', p)}`;
 }
 
 function renderFurnitureRow(m, i) {
@@ -1010,29 +963,26 @@ function renderFurnitureRow(m, i) {
   </div>`;
 }
 
-// ─── Tab 3: Dossier de Pose ────────────────────────────
+// ─── Tab 3: Pose ───────────────────────────────────────
 function renderPose(p) {
   const ps = p.pose;
-  const docLabels = ['Plans techniques validés (dernière version)','Carnet de détails spécifiques','Plans de travail + découpes','Liste quincaillerie & accessoires','Bon de livraison signé','Consignes spécifiques chantier'];
-  const verifLabels = ['Implantation conforme aux plans','Niveaux sols / murs vérifiés','Réservations techniques disponibles (eau, élec, évacuation)','Conditions accès chantier validées','Protection sols / zones sensibles mise en place','Photo Avant effectuée'];
-  const suiviLabels = ['Meubles implantés et fixés','Alignements et niveaux contrôlés','Plans de travail ajustés','Réglages portes / façades effectués','Nettoyage fin de chantier réalisé'];
 
   return `
   ${renderProjectHeader(p)}
 
   <div class="form-section">
-    <div class="form-section-title">Informations pose</div>
-    ${dateField('dateDebut','Date début pose','pose')}
-    ${dateField('dateFin','Date fin prévue','pose')}
+    <div class="form-section-title">Planning pose</div>
+    ${dateField('dateDebut','Début pose','pose')}
+    ${dateField('dateFin','Fin pose prévue','pose')}
     <div class="form-row">
       <span class="form-label">Type équipe</span>
-      <select class="form-input" onchange="setField('pose','typeEquipe',this.value)">
+      <select class="form-input" onchange="setField('pose','typeEquipe',this.value);render()">
         <option value="Interne"${ps.typeEquipe==='Interne'?' selected':''}>Interne</option>
         <option value="Sous-traitant"${ps.typeEquipe==='Sous-traitant'?' selected':''}>Sous-traitant</option>
       </select>
     </div>
     ${ps.typeEquipe === 'Sous-traitant' ? field('nomEntrepriseST','Entreprise ST','Nom','pose') : ''}
-    <div class="form-row">
+    ${ps.typeEquipe === 'Sous-traitant' ? `<div class="form-row">
       <span class="form-label">RC Pro fournie</span>
       <div style="display:flex;gap:16px;margin-left:auto">
         <label style="display:flex;align-items:center;gap:6px;font-size:15px">
@@ -1042,76 +992,27 @@ function renderPose(p) {
           <input type="radio" name="rcpro" value="0" ${!ps.rcProFournie?'checked':''} onchange="setField('pose','rcProFournie',false)"> Non
         </label>
       </div>
-    </div>
+    </div>` : ''}
+  </div>
+
+  ${jalonSection('Avancement pose', 'pose', p)}
+
+  <div class="form-section">
+    <div class="form-section-title">Réserves</div>
     <div class="form-row">
-      <span class="form-label wide">Autres corps d'état</span>
-      <div style="display:flex;gap:16px;margin-left:auto">
-        <label style="display:flex;align-items:center;gap:6px;font-size:15px">
-          <input type="radio" name="autrescorps" value="1" ${ps.autresCorps?'checked':''} onchange="setField('pose','autresCorps',true)"> Oui
-        </label>
-        <label style="display:flex;align-items:center;gap:6px;font-size:15px">
-          <input type="radio" name="autrescorps" value="0" ${!ps.autresCorps?'checked':''} onchange="setField('pose','autresCorps',false)"> Non
-        </label>
-      </div>
-    </div>
-  </div>
-
-  <div class="form-section">
-    <div class="form-section-title">Documents transmis aux poseurs</div>
-    ${docLabels.map((l,i) => checkRow(l, ps.documentsTransmis[i], `toggleCheck('pose','documentsTransmis',${i})`)).join('')}
-  </div>
-
-  <div class="form-section">
-    <div class="form-section-title">Vérifications avant démarrage</div>
-    ${verifLabels.map((l,i) => checkRow(l, ps.verificationsAvant[i], `toggleCheck('pose','verificationsAvant',${i})`)).join('')}
-  </div>
-
-  <div class="form-section">
-    <div class="form-section-title">Suivi installation</div>
-    ${suiviLabels.map((l,i) => checkRow(l, ps.suiviInstallation[i], `toggleCheck('pose','suiviInstallation',${i})`)).join('')}
-  </div>
-
-  <div class="form-section">
-    <div class="form-section-title">Réserves / Non-conformités constatées</div>
-    <div class="form-row">
-      <textarea class="form-input full" rows="4" placeholder="Décrire les réserves et non-conformités…"
+      <textarea class="form-input full" rows="3" placeholder="Réserves / non-conformités constatées…"
         oninput="setField('pose','reserves',this.value)">${ps.reserves||''}</textarea>
     </div>
-  </div>
-
-  <div class="form-section">
-    <div class="form-section-title">Réserves client</div>
     <div class="form-row">
       <textarea class="form-input full" rows="3" placeholder="Réserves émises par le client…"
         oninput="setField('pose','reservesClient',this.value)">${ps.reservesClient||''}</textarea>
     </div>
-  </div>
-
-  <div class="signature-area">
-    <div class="signature-title">Validation fin de chantier</div>
-    <div class="sig-row">
-      <div class="sig-field">
-        <div class="sig-label">Pose terminée conforme aux plans</div>
-        <label style="display:flex;align-items:center;gap:10px;margin-top:4px">
-          <input type="radio" name="poseconf" ${ps.poseConforme?'checked':''} onchange="setField('pose','poseConforme',true)"> <span style="font-size:15px">Oui</span>
-          <input type="radio" name="poseconf" ${!ps.poseConforme?'checked':''} onchange="setField('pose','poseConforme',false)" style="margin-left:8px"> <span style="font-size:15px">Non</span>
-        </label>
-      </div>
-      <div class="sig-field">
-        <div class="sig-label">Réserves émises</div>
-        <label style="display:flex;align-items:center;gap:10px;margin-top:4px">
-          <input type="radio" name="reserveemis" ${ps.reservesEmises?'checked':''} onchange="setField('pose','reservesEmises',true)"> <span style="font-size:15px">Oui</span>
-          <input type="radio" name="reserveemis" ${!ps.reservesEmises?'checked':''} onchange="setField('pose','reservesEmises',false)" style="margin-left:8px"> <span style="font-size:15px">Non</span>
-        </label>
-      </div>
-    </div>
-    ${sigField('Responsable pose','respPose','respPoseDate','pose')}
-    ${sigField('Client / Représentant','client2','clientDate','pose')}
+    ${field('client2','Client à la réception','Nom','pose')}
   </div>
 
   ${renderPhotoSection('pose', p)}
 
-  ${renderTabValidation('Dossier de Pose', ps.suiviInstallation.filter(Boolean).length, ps.suiviInstallation.length, p)}`;
+  ${jalonValidation('pose', 'Pose', p)}`;
 }
 
 // ─── Photo Section ─────────────────────────────────────
@@ -1131,8 +1032,8 @@ function renderPhotoSection(tab, p) {
     <div class="photo-section">
       ${grid}
       <div class="photo-actions">
-        <button class="btn-photo" onclick="capturePhoto('${tab}','camera')">📷 Appareil photo</button>
-        <button class="btn-photo secondary" onclick="capturePhoto('${tab}','gallery')">🖼 Galerie</button>
+        <button class="btn-photo" onclick="capturePhoto('${tab}','camera')">Appareil photo</button>
+        <button class="btn-photo secondary" onclick="capturePhoto('${tab}','gallery')">Galerie</button>
       </div>
     </div>
   </div>`;
@@ -1191,7 +1092,7 @@ function renderTabValidation(label, done, total, p) {
   const pct = total ? Math.round(done / total * 100) : 0;
   const overall = calcProgress(p);
   const ok = done === total && total > 0;
-  const color = ok ? 'var(--green)' : pct > 0 ? 'var(--accent)' : 'var(--gray)';
+  const color = ok ? 'var(--green)' : pct > 0 ? 'var(--text)' : 'var(--gray)';
   return `
   <div style="background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:16px;border:2px solid ${ok ? 'var(--green)' : 'var(--gray2)'}">
     <div style="padding:16px">
@@ -1209,25 +1110,33 @@ function renderTabValidation(label, done, total, p) {
       <div style="border-top:1px solid var(--gray2);padding-top:12px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
           <span style="font-size:13px;color:var(--text3)">Avancement global du projet</span>
-          <span style="font-size:13px;font-weight:700;color:var(--accent)">${overall}%</span>
+          <span style="font-size:13px;font-weight:700;color:var(--text)">${overall}%</span>
         </div>
         <div style="background:var(--gray2);border-radius:4px;height:6px;overflow:hidden">
-          <div style="height:100%;width:${overall}%;background:var(--accent);border-radius:4px;transition:width .4s"></div>
+          <div style="height:100%;width:${overall}%;background:var(--text);border-radius:4px;transition:width .4s"></div>
         </div>
       </div>` : ''}
     </div>
   </div>`;
 }
 
-// ─── Code projet EBA- enforcement ─────────────────────
-function onCodeProjetInput(input) {
-  const suffix = input.value.replace(/^EBA-/i, '');
+// ─── Référence projet CL-xxxx (identique au Drive) ────
+function _applyCode(input, pad) {
+  let digits = input.value.replace(/\D/g, '').slice(0, 4);
+  if (pad && digits) digits = digits.padStart(4, '0');
+  if (input.value !== digits) input.value = digits;
   const p = getProject(state.currentProject);
-  if (p) { p.identification.codeProjet = 'EBA-' + suffix; }
-  // Update nav title live
+  if (!p) return;
+  const id = p.identification;
+  const old = id.codeProjet || '';
+  // Conserver l'ancienne référence EBA-… pour mémoire
+  if (old && old !== 'EBA-' && !/^CL-/.test(old) && !id.codeLegacy) id.codeLegacy = old;
+  id.codeProjet = digits ? 'CL-' + digits : '';
   const h1 = document.querySelector('.nav-bar h1');
-  if (h1) h1.textContent = 'EBA-' + suffix || 'Nouveau projet';
+  if (h1) h1.textContent = id.nomProjet || projectRef(p) || 'Nouveau projet';
 }
+function onCodeProjetInput(input) { _applyCode(input, false); }
+function onCodeProjetChange(input) { _applyCode(input, true); save(); }
 
 function renderSignatureBlock(title, fields, section) {
   return `<div class="signature-area">
@@ -1289,7 +1198,7 @@ function _showPinModal(title, subtitle, callback) {
 function showDeleteModal(projectId) {
   _pinTarget = projectId;
   const p = getProject(projectId);
-  const name = p ? (p.identification.codeProjet || 'ce projet') : 'ce projet';
+  const name = p ? (projectRef(p) || 'ce projet') : 'ce projet';
   _showPinModal(
     'Supprimer le projet',
     `Entrez le code à 4 chiffres pour supprimer <strong>${name}</strong>`,
@@ -1330,20 +1239,19 @@ function openTrash() {
 function renderTrash() {
   const items = [...state.trash].sort((a,b) => b.deletedAt - a.deletedAt);
   const rows = items.length === 0
-    ? `<div class="empty-state"><div class="icon">🗑️</div><h3>Corbeille vide</h3><p>Les projets supprimés apparaissent ici pendant 30 jours</p></div>`
+    ? `<div class="empty-state"><div class="icon">CORBEILLE</div><h3>Corbeille vide</h3><p>Les projets supprimés apparaissent ici pendant 30 jours</p></div>`
     : items.map(p => {
         const daysLeft = 30 - Math.floor((Date.now() - p.deletedAt) / 86400000);
         return `
         <div class="project-card" style="cursor:default">
-          <div class="project-icon"><img src="logo.png" style="width:32px;height:32px;object-fit:contain;filter:brightness(0) invert(1)"></div>
           <div class="project-info">
-            <h3>${p.identification.codeProjet || 'Sans code'}${p.identification.nomProjet ? ' — ' + p.identification.nomProjet : ''}</h3>
+            <h3>${projectRef(p) || 'Sans référence'}${p.identification.nomProjet ? ' — ' + p.identification.nomProjet : ''}</h3>
             <p>${p.identification.client || 'Client non renseigné'} · Supprimé le ${fmt(p.deletedAt)}</p>
             <p style="color:var(--text3);font-size:12px;margin-top:2px">${daysLeft > 0 ? daysLeft + ' j. restants avant suppression définitive' : 'Sera purgé prochainement'}</p>
           </div>
           <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
             <button class="nav-action" style="font-size:13px;padding:6px 10px" onclick="restoreProject('${p.id}')">Restaurer</button>
-            <button class="card-del-btn" onclick="purgeTrashItem('${p.id}')" title="Supprimer définitivement">🗑️</button>
+            <button class="card-del-btn" onclick="purgeTrashItem('${p.id}')" title="Supprimer définitivement"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5"/></svg></button>
           </div>
         </div>`;
       }).join('');
@@ -1545,36 +1453,19 @@ function setField(section, key, value) {
   if (p) { p[section][key] = value; }
 }
 
-function toggleCheck(section, key, index, el) {
+function toggleJalon(key, el) {
   const p = getProject(state.currentProject);
-  if (p) {
-    const newVal = !p[section][key][index];
-    p[section][key][index] = newVal;
-    save();
-    el.querySelector('.checkbox').classList.toggle('checked', newVal);
-    el.querySelector('.checkbox-label').classList.toggle('checked', newVal);
+  if (!p) return;
+  ensureJalons(p);
+  p.jalons[key] = !p.jalons[key];
+  save();
+  el.querySelector('.checkbox').classList.toggle('checked', p.jalons[key]);
+  el.querySelector('.checkbox-label').classList.toggle('checked', p.jalons[key]);
+  const box = document.getElementById('tabValidation');
+  if (box) {
+    const st = _groupProgress(p, box.dataset.group);
+    box.innerHTML = renderTabValidation(box.dataset.label, st.done, st.total, p);
   }
-}
-
-function toggleQuinc(i, el) {
-  const p = getProject(state.currentProject);
-  p.atelier.quincaillerie[i].done = !p.atelier.quincaillerie[i].done;
-  save();
-  el.querySelector('.checkbox').classList.toggle('checked', p.atelier.quincaillerie[i].done);
-  el.querySelector('.checkbox-label').classList.toggle('checked', p.atelier.quincaillerie[i].done);
-}
-
-function toggleCtrl(i, el) {
-  const p = getProject(state.currentProject);
-  p.atelier.controleQualite[i].done = !p.atelier.controleQualite[i].done;
-  save();
-  el.querySelector('.checkbox').classList.toggle('checked', p.atelier.controleQualite[i].done);
-  el.querySelector('.checkbox-label').classList.toggle('checked', p.atelier.controleQualite[i].done);
-}
-
-function setRaci(i, col, value) {
-  const p = getProject(state.currentProject);
-  p.lancement.raci[i][col] = value;
 }
 
 function addFurniture() {
@@ -1737,49 +1628,6 @@ async function _driveAPI(method, path, body) {
   return r.json();
 }
 
-function createProjectFolder(p) {
-  const parts = [p.identification.codeProjet, p.identification.client, p.identification.nomProjet]
-    .filter(s => s && s.trim() && s !== 'EBA-');
-  const name = parts.join(' — ') || ('Projet ' + new Date().toLocaleDateString('fr-FR'));
-  _driveAuth(async () => {
-    try {
-      const f = await _driveAPI('POST', 'files', { name, mimeType: 'application/vnd.google-apps.folder' });
-      p.identification.driveFolder = { id: f.id, url: 'https://drive.google.com/drive/folders/' + f.id, name };
-      save();
-      render();
-      toast('📁 Dossier Drive créé');
-    } catch(e) { toast('Erreur Drive: ' + e.message); }
-  });
-}
-
-async function loadDriveFiles(projectId) {
-  const p = getProject(projectId);
-  if (!p?.identification?.driveFolder) return;
-  const box = document.getElementById('driveFiles');
-  if (!box) return;
-  box.innerHTML = '<span style="color:var(--text3);font-size:13px">Chargement…</span>';
-  _driveAuth(async () => {
-    try {
-      const q = encodeURIComponent(`'${p.identification.driveFolder.id}' in parents and trashed=false`);
-      const data = await _driveAPI('GET', `files?q=${q}&fields=files(id,name,mimeType,webViewLink,iconLink,modifiedTime)&orderBy=modifiedTime+desc`);
-      const files = data.files || [];
-      if (!files.length) {
-        box.innerHTML = '<span style="color:var(--text3);font-size:13px">Aucun fichier — ajoutez des plans dans le dossier Drive</span>';
-        return;
-      }
-      box.innerHTML = files.map(f => `
-        <a href="${f.webViewLink}" target="_blank" rel="noopener"
-           style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray2);text-decoration:none;color:var(--text)">
-          <img src="${f.iconLink}" width="20" height="20" style="flex-shrink:0">
-          <span style="flex:1;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.name}</span>
-          <span style="color:var(--blue);font-size:12px;flex-shrink:0">Ouvrir ↗</span>
-        </a>`).join('');
-    } catch(e) {
-      box.innerHTML = '<span style="color:var(--red);font-size:13px">Erreur de chargement</span>';
-    }
-  });
-}
-
 // ─── Drive Sync (centralisation multi-appareils) ────────
 
 function _setSyncStatus(s) {
@@ -1885,6 +1733,7 @@ async function drivePull() {
       }
 
       state.projects = merged;
+      state.projects.forEach(ensureJalons);
       state.lastModified = remote.lastModified || Date.now();
       try {
         localStorage.setItem('ebanista_v1', JSON.stringify(state.projects));
@@ -1972,53 +1821,6 @@ function driveAutoSync() {
   catch(e) { _drivePending = null; _silentAuthMode = false; }
 }
 
-function renderDriveSection(p) {
-  const folder = p.identification?.driveFolder;
-  if (!_driveClientId) return `
-  <div class="form-section" style="border:1.5px dashed var(--gray2)">
-    <div style="padding:16px;display:flex;align-items:center;gap:12px">
-      <span style="font-size:26px">📁</span>
-      <div style="flex:1">
-        <div style="font-weight:600;font-size:15px;margin-bottom:2px">Google Drive</div>
-        <div style="font-size:13px;color:var(--text3)">Non configuré</div>
-      </div>
-      <button onclick="showDriveSetup()" style="background:var(--blue);color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);touch-action:manipulation">Configurer</button>
-    </div>
-  </div>`;
-
-  if (!folder) return `
-  <div class="form-section">
-    <div style="padding:16px;display:flex;align-items:center;gap:12px">
-      <span style="font-size:26px">📁</span>
-      <div style="flex:1">
-        <div style="font-weight:600;font-size:15px;margin-bottom:2px">Google Drive</div>
-        <div style="font-size:13px;color:var(--text3)">Aucun dossier associé</div>
-      </div>
-      <button onclick="createProjectFolder(getProject('${p.id}'))" style="background:var(--accent);color:white;border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font);touch-action:manipulation">Créer</button>
-    </div>
-  </div>`;
-
-  return `
-  <div class="form-section">
-    <div style="padding:16px">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-        <span style="font-size:26px">📁</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:15px;margin-bottom:2px">Google Drive</div>
-          <div style="font-size:13px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${folder.name}</div>
-        </div>
-        <div style="display:flex;gap:8px;flex-shrink:0">
-          <button onclick="loadDriveFiles('${p.id}')" style="background:var(--gray3);border:none;border-radius:8px;width:34px;height:34px;font-size:16px;cursor:pointer;touch-action:manipulation" title="Actualiser">↻</button>
-          <a href="${folder.url}" target="_blank" rel="noopener" style="background:var(--blue);color:white;text-decoration:none;border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;display:flex;align-items:center;white-space:nowrap">Ouvrir ↗</a>
-        </div>
-      </div>
-      <div id="driveFiles">
-        <button onclick="loadDriveFiles('${p.id}')" style="background:none;border:none;color:var(--blue);font-size:13px;cursor:pointer;font-family:var(--font);touch-action:manipulation;padding:0">Voir les plans et fichiers →</button>
-      </div>
-    </div>
-  </div>`;
-}
-
 function showDriveSetup() {
   const existing = document.getElementById('driveSetupOverlay');
   if (existing) { existing.remove(); return; }
@@ -2033,13 +1835,13 @@ function showDriveSetup() {
   ov.onclick = () => ov.remove();
   ov.innerHTML = `
     <div class="pin-modal" style="width:360px;max-width:92vw;text-align:left" onclick="event.stopPropagation()">
-      <h3 style="text-align:center;margin-bottom:8px">📁 Google Drive</h3>
+      <h3 style="text-align:center;margin-bottom:8px">Google Drive</h3>
       ${_driveClientId ? `
       <div style="background:var(--gray3);border-radius:10px;padding:12px;margin-bottom:14px;display:flex;align-items:center;gap:10px">
         <div style="width:10px;height:10px;border-radius:50%;background:${syncColor};flex-shrink:0"></div>
         <div style="flex:1;font-size:12px;color:var(--text2)">${lastSyncTxt}</div>
         <button onclick="document.getElementById('driveSetupOverlay').remove();_driveAuth(()=>drivePull())"
-          style="background:var(--blue);color:white;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);touch-action:manipulation;flex-shrink:0">☁ Sync</button>
+          style="background:var(--accent);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);touch-action:manipulation;flex-shrink:0">☁ Sync</button>
       </div>` : '<p style="text-align:center;margin-bottom:14px;font-size:14px">Liez l\'app à Google Drive pour synchroniser les projets sur tous vos appareils.</p>'}
       <div style="background:var(--gray3);border-radius:10px;padding:12px;font-size:12px;line-height:1.7;color:var(--text2);margin-bottom:16px">
         <strong>Configuration :</strong><br>
@@ -2048,7 +1850,7 @@ function showDriveSetup() {
         3. "Identifiants" → "+ Créer" → <strong>ID client OAuth 2.0</strong><br>
         4. Type : <strong>Application Web</strong><br>
         5. Origines JS autorisées :<br>
-        <span id="driveOriginHint" style="display:inline-block;margin-top:4px;background:white;border:1px solid var(--accent2);border-radius:6px;padding:3px 8px;font-family:monospace;font-size:11px;color:var(--accent);word-break:break-all"></span><br>
+        <span id="driveOriginHint" style="display:inline-block;margin-top:4px;background:var(--gray3);border:1px solid var(--accent2);border-radius:6px;padding:3px 8px;font-family:monospace;font-size:11px;color:var(--text);word-break:break-all"></span><br>
         6. Copiez le <strong>Client ID</strong> ci-dessous
       </div>
       <label style="font-size:13px;color:var(--text3);display:block;margin-bottom:6px">Client ID OAuth 2.0</label>
@@ -2066,12 +1868,12 @@ function showDriveSetup() {
         style="width:100%;background:none;border:1.5px solid var(--gray2);border-radius:10px;padding:11px;font-size:14px;color:var(--text2);cursor:pointer;font-family:var(--font);touch-action:manipulation;margin-bottom:10px">🔐 Modifier le code PIN</button>
       <div style="display:flex;gap:10px;margin-bottom:10px">
         <button onclick="exportData()"
-          style="flex:1;background:none;border:1.5px solid var(--gray2);border-radius:10px;padding:11px;font-size:13px;color:var(--text2);cursor:pointer;font-family:var(--font);touch-action:manipulation">⬇️ Exporter</button>
+          style="flex:1;background:none;border:1.5px solid var(--gray2);border-radius:10px;padding:11px;font-size:13px;color:var(--text2);cursor:pointer;font-family:var(--font);touch-action:manipulation">Exporter</button>
         <button onclick="document.getElementById('importFileInput').click()"
-          style="flex:1;background:none;border:1.5px solid var(--gray2);border-radius:10px;padding:11px;font-size:13px;color:var(--text2);cursor:pointer;font-family:var(--font);touch-action:manipulation">⬆️ Importer</button>
+          style="flex:1;background:none;border:1.5px solid var(--gray2);border-radius:10px;padding:11px;font-size:13px;color:var(--text2);cursor:pointer;font-family:var(--font);touch-action:manipulation">Importer</button>
       </div>
       <button onclick="openTrash()"
-        style="width:100%;background:none;border:1.5px solid var(--gray2);border-radius:10px;padding:11px;font-size:14px;color:var(--text2);cursor:pointer;font-family:var(--font);touch-action:manipulation">🗑 Corbeille${state.trash.length ? ' (' + state.trash.length + ')' : ''}</button>
+        style="width:100%;background:none;border:1.5px solid var(--gray2);border-radius:10px;padding:11px;font-size:14px;color:var(--text2);cursor:pointer;font-family:var(--font);touch-action:manipulation">Corbeille${state.trash.length ? ' (' + state.trash.length + ')' : ''}</button>
     </div>`;
   document.body.appendChild(ov);
   const hint = document.getElementById('driveOriginHint');
@@ -2088,7 +1890,7 @@ function printProject(id) {
   const id_ = p.identification;
   const ps  = p.pose;
 
-  const code    = id_.codeProjet       || '';
+  const code    = projectRef(p);
   const client  = id_.client           || '';
   const projet  = id_.nomProjet        || code;
   const adresse = id_.adresseChantier  || '';
@@ -2097,7 +1899,7 @@ function printProject(id) {
   const today = new Date().toLocaleDateString('fr-FR', { day:'2-digit', month:'long', year:'numeric' });
   const fmt = d => d ? new Date(d).toLocaleDateString('fr-FR') : '—';
 
-  const suiviLabels = ['Meubles implantés et fixés','Alignements et niveaux contrôlés','Plans de travail ajustés','Réglages portes / façades effectués','Nettoyage fin de chantier réalisé'];
+  const poseOk = getJalons(p).posee;
 
   // ── Réserves ──
   const hasReserves = ps.reservesEmises || (ps.reserves || '').trim() || (ps.reservesClient || '').trim();
@@ -2108,9 +1910,8 @@ function printProject(id) {
   ` : `<div class="bl-sans-reserve">✓ Aucune réserve — travaux réceptionnés conformes</div>`;
 
   // ── Suivi installation ──
-  const suiviHTML = suiviLabels.map((l, i) =>
-    `<div class="bl-check-row"><span class="bl-check">${ps.suiviInstallation[i] ? '☑' : '☐'}</span> ${l}</div>`
-  ).join('');
+  const suiviHTML =
+    `<div class="bl-check-row"><span class="bl-check">${poseOk ? '☑' : '☐'}</span> Travaux d'installation réalisés conformément aux plans</div>`;
 
   // ── Déclaration ──
   const clientNom = ps.client2 || '____________________________';

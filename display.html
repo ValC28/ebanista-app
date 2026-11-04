@@ -4,25 +4,31 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ebanista — Tableau de Bord</title>
+  <meta name="theme-color" content="#000000">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Michroma&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <script src="ebanista-core.js?v=2.10"></script>
+  <script src="ebanista-core.js?v=2.11"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg:      #0b0b12;
+      color-scheme: dark;
+      --bg:      #000000;
       --gray2:   rgba(255,255,255,.15); /* pour progressColor() partagée */
-      --card:    #16161f;
-      --card2:   #1e1e2a;
-      --accent:  #C5972A;
-      --green:   #34C759;
-      --red:     #FF3B30;
-      --orange:  #FF9500;
-      --blue:    #007AFF;
-      --gray:    #8E8E93;
-      --text:    #FFFFFF;
-      --text2:   rgba(235,235,245,.75);
-      --text3:   rgba(235,235,245,.40);
-      --font:    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+      --card:    #0D0D0D;
+      --card2:   #151515;
+      --accent:  #E5E5E5;
+      --green:   #4CC38A;
+      --red:     #FF5A4F;
+      --orange:  #F0A050;
+      --blue:    #7FA8D9;
+      --gray:    #8E8E8E;
+      --text:    #E5E5E5;
+      --text2:   rgba(229,229,229,.75);
+      --text3:   rgba(229,229,229,.42);
+      --font:       'Raleway', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+      --font-title: 'Michroma', 'Arial Black', Arial, sans-serif;
     }
 
     html, body {
@@ -41,14 +47,10 @@
       height: 72px; flex-shrink: 0;
     }
     .brand { display: flex; align-items: center; gap: 14px; }
-    .brand-icon {
-      width: 40px; height: 40px; background: var(--accent); border-radius: 9px;
-      display: flex; align-items: center; justify-content: center; font-size: 22px;
-    }
-    .brand-name  { font-size: 20px; font-weight: 700; letter-spacing: .3px; }
-    .brand-sub   { font-size: 11px; color: var(--accent); font-weight: 600;
-                   text-transform: uppercase; letter-spacing: 1.2px; margin-top: 2px; }
-    #clock       { font-size: 30px; font-weight: 300; font-variant-numeric: tabular-nums;
+    .brand-name  { font-family: var(--font-title); font-size: 20px; font-weight: 400; letter-spacing: .32em; text-transform: uppercase; }
+    .brand-sub   { font-size: 10px; color: var(--text3); font-weight: 500;
+                   text-transform: uppercase; letter-spacing: .5em; margin-top: 6px; }
+    #clock       { font-family: var(--font); font-size: 30px; font-weight: 300; font-variant-numeric: tabular-nums;
                    text-align: right; }
     #date        { font-size: 13px; color: var(--text3); text-align: right; margin-top: 2px;
                    text-transform: capitalize; }
@@ -84,8 +86,8 @@
     .col-4 .col-header { border-color: var(--green); }
 
     .col-title {
-      font-size: 12px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 1.2px;
+      font-family: var(--font-title); font-size: 11px; font-weight: 400; text-transform: uppercase;
+      letter-spacing: .18em;
     }
     .col-0 .col-title { color: var(--gray); }
     .col-1 .col-title { color: var(--orange); }
@@ -98,10 +100,10 @@
       display: flex; align-items: center; justify-content: center;
       font-size: 13px; font-weight: 700;
     }
-    .col-0 .col-count { background: rgba(142,142,147,.15); color: var(--gray); }
+    .col-0 .col-count { background: rgba(142,142,142,.15); color: var(--gray); }
     .col-1 .col-count { background: rgba(255,149,0,.12); color: var(--orange); }
     .col-2 .col-count { background: rgba(0,122,255,.12); color: var(--blue); }
-    .col-3 .col-count { background: rgba(197,151,42,.15); color: var(--accent); }
+    .col-3 .col-count { background: rgba(229,229,229,.15); color: var(--accent); }
     .col-4 .col-count { background: rgba(52,199,89,.12); color: var(--green); }
 
     .col-body {
@@ -162,7 +164,7 @@
       display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
       border-bottom: 2px solid var(--accent);
     }
-    .cal-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.2px; color: var(--accent); white-space: nowrap; }
+    .cal-title { font-family: var(--font-title); font-size: 11px; font-weight: 400; text-transform: uppercase; letter-spacing: .18em; color: var(--accent); white-space: nowrap; }
     .cal-sub   { font-size: 11px; color: var(--text3); white-space: nowrap; }
 
     /* Month grid */
@@ -174,7 +176,7 @@
       padding: 4px 5px; display: flex; flex-direction: column; min-height: 0;
     }
     .cal-day.other-month { opacity: .28; }
-    .cal-day.today { background: rgba(197,151,42,.16); box-shadow: inset 0 0 0 1px var(--accent); }
+    .cal-day.today { background: rgba(229,229,229,.16); box-shadow: inset 0 0 0 1px var(--accent); }
     .cal-daynum { font-size: 11px; font-weight: 600; color: var(--text2); }
     .cal-day.today .cal-daynum { color: var(--accent); font-weight: 800; }
     .cal-dots { display: flex; flex-wrap: wrap; gap: 2px; margin-top: auto; align-items: center; }
@@ -186,7 +188,7 @@
     .week-day { flex: 1; display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,.05); min-height: 0; }
     .week-day:last-child { border-right: none; }
     .week-day-header { padding: 8px 6px; text-align: center; flex-shrink: 0; border-bottom: 1px solid rgba(255,255,255,.06); }
-    .week-day.today .week-day-header { background: rgba(197,151,42,.12); }
+    .week-day.today .week-day-header { background: rgba(229,229,229,.12); }
     .week-dow { font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--text3); }
     .week-daynum { font-size: 15px; font-weight: 700; }
     .week-day.today .week-daynum { color: var(--accent); }
@@ -209,17 +211,17 @@
       display: flex; align-items: center; justify-content: center;
     }
     .overlay-card {
-      background: var(--card2); border-radius: 20px; padding: 44px 40px;
+      background: var(--card2); border-radius: 8px; padding: 44px 40px;
       text-align: center; max-width: 400px; width: 88%;
       border: 1px solid rgba(255,255,255,.1);
     }
     .overlay-icon  { font-size: 52px; margin-bottom: 16px; }
-    .overlay-title { font-size: 22px; font-weight: 700; margin-bottom: 10px; }
+    .overlay-title { font-family: var(--font-title); font-size: 14px; font-weight: 400; letter-spacing: .16em; text-transform: uppercase; margin-bottom: 14px; }
     .overlay-desc  { font-size: 14px; color: var(--text2); line-height: 1.65;
                      margin-bottom: 24px; }
     .overlay-btn {
-      background: var(--accent); color: white; border: none;
-      border-radius: 12px; padding: 14px 0; font-size: 16px; font-weight: 600;
+      background: var(--text); color: #000; border: none;
+      border-radius: 4px; padding: 14px 0; font-size: 16px; font-weight: 600;
       cursor: pointer; width: 100%; font-family: var(--font);
     }
     .overlay-btn:active { opacity: .8; }
@@ -238,7 +240,6 @@
 
   <div class="header">
     <div class="brand">
-      <div class="brand-icon"><img src="logo.png" style="width:26px;height:26px;object-fit:contain;filter:brightness(0) invert(1)"></div>
       <div>
         <div class="brand-name">Ebanista</div>
         <div class="brand-sub">Tableau de Bord Production</div>
@@ -298,7 +299,7 @@ function deliveryHTML(dateStr) {
   else               { badgeClass = 'badge-ok';     badgeText = `${days} j. ouv.`; }
   return `
     <div class="delivery-row">
-      <span class="delivery-date">📦 ${dateLabel}</span>
+      <span class="delivery-date">Livraison ${dateLabel}</span>
       <span class="delivery-badge ${badgeClass}">${badgeText}</span>
     </div>`;
 }
@@ -344,7 +345,7 @@ function renderMonthCalendar() {
     const isToday = dStr === todayStr;
     const otherMonth = d.getMonth() !== month;
     const dots = items.slice(0, 4).map(p =>
-      `<span class="cal-dot" style="background:${deliveryColor(workingDaysLeft(dStr))}" title="${p.identification.codeProjet || ''}"></span>`
+      `<span class="cal-dot" style="background:${deliveryColor(workingDaysLeft(dStr))}" title="${projectRef(p)}"></span>`
     ).join('');
     const more = items.length > 4 ? `<span class="cal-more">+${items.length - 4}</span>` : '';
     cells += `<div class="cal-day${isToday ? ' today' : ''}${otherMonth ? ' other-month' : ''}">
@@ -355,7 +356,7 @@ function renderMonthCalendar() {
 
   document.getElementById('calMonth').innerHTML = `
     <div class="cal-header">
-      <span class="cal-title">📅 ${monthLabel}</span>
+      <span class="cal-title">${monthLabel}</span>
     </div>
     <div class="cal-dow-row">${dowNames.map(n => `<div class="cal-dow">${n}</div>`).join('')}</div>
     <div class="cal-grid" style="grid-template-rows:repeat(${rows},1fr)">${cells}</div>`;
@@ -379,7 +380,7 @@ function renderWeekCalendar() {
     const body = items.length === 0
       ? `<div class="week-empty">—</div>`
       : items.map(p => {
-          const ref    = p.identification?.codeProjet || '';
+          const ref    = projectRef(p);
           const name   = p.identification?.nomProjet  || '';
           const client = p.identification?.client     || '';
           const color  = deliveryColor(workingDaysLeft(dStr));
@@ -400,7 +401,7 @@ function renderWeekCalendar() {
 
   document.getElementById('calWeek').innerHTML = `
     <div class="cal-header">
-      <span class="cal-title">🗓️ Cette semaine</span>
+      <span class="cal-title">Cette semaine</span>
       <span class="cal-sub">${monday.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} – ${sunday.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
     </div>
     <div class="week-cols">${cols}</div>`;
@@ -416,7 +417,7 @@ function render() {
       : list.map(p => {
           const pct    = calcProgress(p);
           const color  = progressColor(pct);
-          const ref    = p.identification?.codeProjet    || '';
+          const ref    = projectRef(p);
           const name   = p.identification?.nomProjet     || '';
           const client = p.identification?.client        || '';
           const deliv  = p.identification?.dateLivraison || '';
@@ -534,7 +535,7 @@ function showAuth() {
   ov.id = 'authOv'; ov.className = 'overlay';
   ov.innerHTML = `
     <div class="overlay-card">
-      <div class="overlay-icon"><img src="logo.png" style="width:64px;height:64px;object-fit:contain"></div>
+      <div class="overlay-icon" style="font-family:var(--font-title);font-size:16px;letter-spacing:.35em">EBANISTA</div>
       <div class="overlay-title">Ebanista Production</div>
       <div class="overlay-desc">
         Connectez-vous à Google Drive pour afficher l'état d'avancement<br>des projets en temps réel sur cet écran.

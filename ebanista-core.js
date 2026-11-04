@@ -1,21 +1,85 @@
 // ebanista-core.js — Fonctions partagées index.html + display.html
 
 /**
- * Calcule le pourcentage d'avancement global d'un projet.
- * Compte : lancement (4 sous-listes) + contrôle atelier + suivi installation.
+ * Jalons de suivi (remplacent les anciennes listes de cases à cocher).
+ * Trois groupes : lancement (bureau d'études / achats), atelier, pose.
+ */
+const JALONS = {
+  lancement: [
+    { k: 'plans',              label: 'Plans validés' },
+    { k: 'cnc',                label: 'Fichiers CNC prêts' },
+    { k: 'matieresCommandees', label: 'Matières commandées' },
+  ],
+  atelier: [
+    { k: 'matieresRecues',     label: 'Matières reçues' },
+    { k: 'fabrique',           label: 'Fabrication terminée' },
+    { k: 'controle',           label: 'Contrôle qualité OK' },
+  ],
+  pose: [
+    { k: 'docsTransmis',       label: 'Dossier transmis aux poseurs' },
+    { k: 'posee',              label: 'Pose terminée' },
+    { k: 'reservesLevees',     label: 'Pas de réserve / réserves levées' },
+  ],
+};
+
+/** Référence affichée d'un projet : CL-xxxx, ou à défaut l'ancienne référence EBA-… */
+function projectRef(p) {
+  const id = p.identification || {};
+  return id.codeProjet || id.codeLegacy || '';
+}
+
+const _allTrue = arr => Array.isArray(arr) && arr.length > 0 && arr.every(Boolean);
+const _allDone = arr => Array.isArray(arr) && arr.length > 0 && arr.every(x => x && x.done);
+
+/**
+ * Calcule les jalons d'un projet ancien (listes de cases) pour reprendre
+ * l'avancement existant. N'écrit rien dans le projet.
+ */
+function deriveJalons(p) {
+  const l = p.lancement || {}, a = p.atelier || {}, ps = p.pose || {};
+  const controle = _allDone(a.controleQualite);
+  const fabrique = controle || (Array.isArray(a.meubles) && a.meubles.length > 0 && a.meubles.every(m => m.done));
+  const posee = _allTrue(ps.suiviInstallation);
+  return {
+    plans:              _allTrue(l.dossierTech),
+    cnc:                _allTrue(l.fichiersProd),
+    matieresCommandees: _allTrue(l.matieresFourn),
+    matieresRecues:     fabrique || (Array.isArray(a.quincaillerie) && a.quincaillerie.some(x => x.done)),
+    fabrique,
+    controle,
+    docsTransmis:       _allTrue(ps.documentsTransmis),
+    posee,
+    reservesLevees:     posee && !((ps.reserves || '').trim()),
+  };
+}
+
+/** Jalons d'un projet (ceux enregistrés, sinon ceux déduits de l'ancien format). */
+function getJalons(p) {
+  return p.jalons || deriveJalons(p);
+}
+
+/** Garantit que le projet porte ses jalons (migration à la première ouverture). */
+function ensureJalons(p) {
+  if (!p.jalons) p.jalons = deriveJalons(p);
+  return p;
+}
+
+function _groupProgress(p, group) {
+  const j = getJalons(p);
+  const list = JALONS[group];
+  return { done: list.filter(x => j[x.k]).length, total: list.length };
+}
+
+/**
+ * Calcule le pourcentage d'avancement global d'un projet
+ * (9 jalons : lancement, atelier, pose).
  */
 function calcProgress(p) {
   let done = 0, total = 0;
-  const addArr = arr => { total += arr.length; done += arr.filter(Boolean).length; };
-  const addObj = arr => { total += arr.length; done += arr.filter(x => x.done).length; };
-  if (p.lancement) addArr([
-    ...(p.lancement.dossierTech     || []),
-    ...(p.lancement.fichiersProd    || []),
-    ...(p.lancement.matieresFourn   || []),
-    ...(p.lancement.pointsCritiques || []),
-  ]);
-  if (p.atelier?.controleQualite) addObj(p.atelier.controleQualite);
-  if (p.pose?.suiviInstallation)  addArr(p.pose.suiviInstallation);
+  for (const g of Object.keys(JALONS)) {
+    const s = _groupProgress(p, g);
+    done += s.done; total += s.total;
+  }
   return total ? Math.round(done / total * 100) : 0;
 }
 
@@ -33,25 +97,19 @@ function progressColor(pct) {
 }
 
 /**
- * Pourcentage d'avancement du sous-dossier "Lancement Production".
+ * Pourcentage d'avancement du lancement (plans, CNC, matières commandées).
  */
 function launchProgress(p) {
-  if (!p.lancement) return 0;
-  const items = [
-    ...(p.lancement.dossierTech     || []),
-    ...(p.lancement.fichiersProd    || []),
-    ...(p.lancement.matieresFourn   || []),
-    ...(p.lancement.pointsCritiques || []),
-  ];
-  return items.length ? Math.round(items.filter(Boolean).length / items.length * 100) : 0;
+  const s = _groupProgress(p, 'lancement');
+  return s.total ? Math.round(s.done / s.total * 100) : 0;
 }
 
 /**
- * Pourcentage d'avancement du contrôle qualité atelier.
+ * Pourcentage d'avancement de l'atelier (matières reçues, fabrication, contrôle).
  */
 function atelierProgress(p) {
-  const items = p.atelier?.controleQualite || [];
-  return items.length ? Math.round(items.filter(x => x.done).length / items.length * 100) : 0;
+  const s = _groupProgress(p, 'atelier');
+  return s.total ? Math.round(s.done / s.total * 100) : 0;
 }
 
 /**

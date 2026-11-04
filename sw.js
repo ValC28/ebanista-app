@@ -1,8 +1,8 @@
-// Service Worker — Ebanista Production v2.10
-const CACHE = 'ebanista-v2.10';
+// Service Worker — Ebanista Production v2.11
+const CACHE = 'ebanista-v2.11';
 // index.html / display.html : network-first (toujours à jour), assets statiques : cache-first
 const NETWORK_FIRST = ['./index.html', './display.html'];
-const ASSETS = ['./manifest.json', './logo.png', './ebanista-core.js?v=2.10'];
+const ASSETS = ['./manifest.json', './logo.png', './ebanista-core.js?v=2.11'];
 
 self.addEventListener('install', e => {
   // cache:'reload' pour ignorer le cache HTTP du navigateur et repartir du réseau
@@ -21,7 +21,16 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 
+// Polices Google (Michroma, Raleway, Mukta) : mises en cache pour le mode hors-ligne
+const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
+
 self.addEventListener('fetch', e => {
+  if (FONT_HOSTS.includes(new URL(e.request.url).hostname)) {
+    e.respondWith(caches.open(CACHE).then(c => c.match(e.request).then(hit =>
+      hit || fetch(e.request).then(res => { c.put(e.request, res.clone()); return res; })
+    )));
+    return;
+  }
   if (!e.request.url.startsWith(self.location.origin)) return;
   const url = new URL(e.request.url);
   const isNetworkFirst = NETWORK_FIRST.some(p => url.pathname.endsWith(p.replace('./', '/')));
